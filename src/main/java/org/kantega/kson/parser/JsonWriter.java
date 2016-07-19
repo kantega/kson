@@ -10,7 +10,7 @@ public class JsonWriter {
 
   public static String write(JsonValue json) {
     return json.fold(
-        JsonValue.Folder.foldWith("")
+        JsonValue.Fold.foldWith("")
             .onNull(() -> "")
             .onBool(Object::toString)
             .onNumber(BigDecimal::toString)
@@ -26,7 +26,7 @@ public class JsonWriter {
 
   private static String writePretty(JsonValue json, int indent) {
     return json.fold(
-        JsonValue.Folder.foldWith("")
+        JsonValue.Fold.foldWith("")
             .onNull(() -> "")
             .onBool(Object::toString)
             .onNumber(BigDecimal::toString)

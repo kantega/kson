@@ -1,7 +1,9 @@
 package org.kantega.kson.json;
 
+import fj.P;
 import fj.P2;
 import fj.data.List;
+import fj.data.Option;
 
 import java.math.BigDecimal;
 
@@ -21,6 +23,10 @@ public class JsonValues {
 
   public static JsonObject jObj(P2<String,JsonValue> ... fields){
     return jObj(List.arrayList(fields));
+  }
+
+  public static P2<String,JsonValue> field(String name, JsonValue value){
+    return P.p(name,value);
   }
 
   public static JsonNull jNull(){
@@ -46,4 +52,13 @@ public class JsonValues {
   public static JsonNumber jNum(double n){
     return new JsonNumber(BigDecimal.valueOf(n));
   }
+
+  public static Option<String> asText(JsonValue value){
+    return value.fold(JsonValue.Fold.foldWith(Option.<String>none()).onString(Option::some));
+  }
+
+  public static Option<String> getFieldAsText(JsonValue value,String field){
+    return value.fold(JsonValue.Fold.foldWith(Option.<String>none()).onObject(m->m.get(field).bind(JsonValues::asText)));
+  }
+
 }

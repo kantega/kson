@@ -4,6 +4,7 @@ import fj.Equal;
 import fj.Ord;
 import fj.P2;
 import fj.data.List;
+import fj.data.Option;
 import fj.data.TreeMap;
 
 public class JsonObject extends JsonValue {
@@ -27,6 +28,10 @@ public class JsonObject extends JsonValue {
 
   public JsonObject withField(String name, JsonValue value) {
     return new JsonObject(pairs.set(name, value));
+  }
+
+  public Option<JsonValue> get(String fieldName) {
+    return pairs.get(fieldName);
   }
 
   @Override

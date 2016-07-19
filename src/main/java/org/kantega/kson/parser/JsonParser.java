@@ -125,7 +125,7 @@ public class JsonParser {
 
   // *** Parser ***
 
-  public static final Parser<Stream<Character>, JsonValue, Exception> numberValue =
+  private static final Parser<Stream<Character>, JsonValue, Exception> numberValue =
       number
           .map(cs -> new JsonNumber(new BigDecimal(Stream.asString(cs))));
 
