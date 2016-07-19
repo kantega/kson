@@ -22,18 +22,19 @@ public class ParseExample {
     final String jsonString =
         JsonWriter.writePretty(json);
 
+    System.out.println(jsonString);
 
     final Validation<String, JsonValue> parsedJsonV =
         JsonParser.parse(jsonString);
 
-    final F<JsonValue, Validation<String,String>> getNameAndAge =
+    final F<JsonValue, Validation<String, String>> getNameAndAge =
         obj ->
-            getFieldAsText(obj,"name").bind(name->getFieldAsText(obj,"age").map(age->name+", "+age)).toValidation("'name' or 'age' is missing");
+            getFieldAsText(obj, "name").bind(name -> getFieldAsText(obj, "age").map(age -> name + ", " + age)).toValidation("'name' or 'age' is missing");
 
     final String output =
-           parsedJsonV.validation(
-               failmsg->failmsg,
-               parsedJson->getNameAndAge.f(parsedJson).validation(failmsg2->failmsg2,nameAndAge->nameAndAge));
+        parsedJsonV.validation(
+            failmsg -> failmsg,
+            parsedJson -> getNameAndAge.f(parsedJson).validation(failmsg2 -> failmsg2, nameAndAge -> nameAndAge));
 
   }
 }

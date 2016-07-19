@@ -48,7 +48,21 @@ public class ParseExample {
         
     final String jsonString =
         JsonWriter.writePretty(json);
+        
+    System.out.println(jsonString);
   }
+}
+```
+Which outputs
+```json
+{
+  "age":28,
+  "favourites":[
+    "red",
+    "blue",
+    "purple"
+  ],
+  "name":"Ola Nordmann"
 }
 ```
 
