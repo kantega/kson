@@ -252,8 +252,13 @@ In kson we have opted for the visitor pattern to extract the content of the a js
 the desired type by calling ```JsonValue.fold(JsonValue.Fold)```.  Most java based json libraries use the unsafe _is***_ idiom in conjunction with a jungle of ifs
 and elses. We felt that folding was the most compact and safe way to deconstruct a json tree.
 
-
+...
 
 
 
 ##Converting to and from JsonValue, the typesafest way to convert to and from json.
+
+
+...
+
+
