@@ -8,4 +8,11 @@ public class JsonString extends JsonValue{
     this.value = value;
   }
 
+  @Override
+  public String toString() {
+    final StringBuffer sb = new StringBuffer("JsonString{");
+    sb.append("value='").append(value).append('\'');
+    sb.append('}');
+    return sb.toString();
+  }
 }

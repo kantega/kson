@@ -15,4 +15,11 @@ public class JsonArray extends JsonValue {
     this.values = values;
   }
 
+  @Override
+  public String toString() {
+    final StringBuffer sb = new StringBuffer("JsonArray{");
+    sb.append(values);
+    sb.append('}');
+    return sb.toString();
+  }
 }

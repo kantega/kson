@@ -32,7 +32,7 @@ public abstract class JsonValue {
     <A extends JsonValue> T on(A value);
   }
 
-  static class Folder<T> implements Fold<T> {
+  public static class Folder<T> implements Fold<T> {
     final T                          def;
     final List<F<Object, Option<T>>> funcs;
 

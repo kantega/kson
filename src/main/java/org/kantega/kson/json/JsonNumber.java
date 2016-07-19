@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 
 public class JsonNumber extends JsonValue {
 
-  public final Equal<JsonNumber> eq =
+  public final static Equal<JsonNumber> eq =
       Equal.bigdecimalEqual.contramap(num -> num.value);
 
   public final BigDecimal value;
@@ -15,4 +15,11 @@ public class JsonNumber extends JsonValue {
     this.value = value;
   }
 
+  @Override
+  public String toString() {
+    final StringBuffer sb = new StringBuffer("JsonNumber{");
+    sb.append(value);
+    sb.append('}');
+    return sb.toString();
+  }
 }
