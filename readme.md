@@ -240,8 +240,8 @@ which also prints
 Ola Nordmann, 28
 
 ```
-Can you spot the difference? We have changed out extraction function to return a tuple2 of string and bigdecimal and defer the construction of the string to the latest
-possible moment in our program (often called at "the end of the universe"). Now the compiler will tell us if the mistakenly use the wrong conversion. Later we will use
+Can you spot the difference? We have changed the extraction function to return a tuple2 of string and bigdecimal and defer the construction of the string to the latest
+possible moment in our program (often called at "the end of the universe"). Now the compiler will tell us if we mistakenly use the wrong conversion. Later we will use
  the compiler even more by using converters.
 
 

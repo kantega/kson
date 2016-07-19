@@ -3,7 +3,6 @@ package org.kantega.kson.parser;
 import fj.P;
 import fj.P2;
 import fj.data.List;
-import fj.data.Option;
 import fj.data.Stream;
 import fj.data.Validation;
 import fj.parser.Parser;
@@ -13,7 +12,6 @@ import org.kantega.kson.json.*;
 import java.math.BigDecimal;
 import java.util.function.Supplier;
 
-import static fj.P.*;
 import static fj.parser.Parser.CharsParser.character;
 import static fj.parser.Parser.CharsParser.characters;
 import static org.kantega.kson.json.JsonObject.JsonObject;
@@ -161,7 +159,7 @@ public class JsonParser {
   }
 
   private static Parser<Stream<Character>, P2<String, JsonValue>, ParseFailure> pair() {
-    return string.bind(trim(colon), value(), str -> c -> val -> p(str, val));
+    return string.bind(trim(colon), value(), str -> c -> val -> P.<String, JsonValue>p(str, val));
   }
 
   private static Parser<Stream<Character>, JsonValue, ParseFailure> object() {
