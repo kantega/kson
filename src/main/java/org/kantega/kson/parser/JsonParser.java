@@ -55,10 +55,10 @@ public class JsonParser {
       singleChar('u').bind(u -> hex.bind(h1 -> hex.bind(h2 -> hex.bind(h3 -> hex.map(h4 -> u.append(Stream.arrayStream(h1, h2, h3, h4)))))));
 
   private static final Parser<Stream<Character>, Stream<Character>, Exception> special =
-      tab.or(quote).or(formfeed).or(reverseSolidus).or(solidus).or(control);
+      tab.or(nl).or(quote).or(formfeed).or(reverseSolidus).or(solidus).or(control);
 
   private static final Parser<Stream<Character>, Stream<Character>, Exception> whitespaces =
-      flatten(tab.or(quote).or(formfeed).or(reverseSolidus).or(solidus).or(space).repeat());
+      space.or(singleChar('\n')).or(singleChar('\t'));
 
   private static final Parser<Stream<Character>, Stream<Character>, Exception> comma =
       singleChar(',');
@@ -156,7 +156,7 @@ public class JsonParser {
   }
 
   private static Parser<Stream<Character>, P2<String, JsonValue>, Exception> pair() {
-    return string.bind(colon, value(), str -> c -> val -> P.<String, JsonValue>p(str, val));
+    return string.bind(trim(colon), value(), str -> c -> val -> P.<String, JsonValue>p(str, val));
   }
 
   private static Parser<Stream<Character>, JsonValue, Exception> object() {
@@ -198,7 +198,7 @@ public class JsonParser {
   }
 
   private static Parser<Stream<Character>, Stream<Character>, Exception> trim(Parser<Stream<Character>, Stream<Character>, Exception> parser){
-    return whitespaces.bind(parser,whitespaces,w1->value->w2->value);
+    return whitespaces.repeat().bind(parser,whitespaces.repeat(),w1->value->w2->value);
   }
 
   // *** API ***

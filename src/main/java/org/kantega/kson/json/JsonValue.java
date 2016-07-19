@@ -9,19 +9,21 @@ import fj.data.TreeMap;
 
 import java.math.BigDecimal;
 
+import static org.kantega.kson.json.JsonValue.Folder.*;
+
 public abstract class JsonValue {
 
   public static Equal<JsonValue> eq() {
     return Equal.equal(one -> other ->
         one
             .fold(
-                Folder.def(false)
-                    .onString(str1 -> other.fold(Folder.def(false).onString(str1::equals)))
-                    .onBool(bool1 -> other.fold(Folder.def(false).onBool(bool1::equals)))
-                    .onNumber(num1 -> other.fold(Folder.def(false).onNumber(num1::equals)))
-                    .onNull(() -> other.fold(Folder.def(false).onNull(() -> true)))
-                    .onObject(obj1 -> other.fold(Folder.def(false).onObject(Equal.treeMapEqual(Equal.stringEqual, eq()).eq(obj1))))
-                    .onArray(arr -> other.fold(Folder.def(false).onArray(Equal.listEqual(eq()).eq(arr))))));
+                foldWith(false)
+                    .onString(str1 -> other.fold(foldWith(false).onString(str1::equals)))
+                    .onBool(bool1 -> other.fold(foldWith(false).onBool(bool1::equals)))
+                    .onNumber(num1 -> other.fold(foldWith(false).onNumber(num1::equals)))
+                    .onNull(() -> other.fold(foldWith(false).onNull(() -> true)))
+                    .onObject(obj1 -> other.fold(foldWith(false).onObject(Equal.treeMapEqual(Equal.stringEqual, eq()).eq(obj1))))
+                    .onArray(arr -> other.fold(foldWith(false).onArray(Equal.listEqual(eq()).eq(arr))))));
   }
 
   public <T> T fold(Fold<T> f){
@@ -41,7 +43,7 @@ public abstract class JsonValue {
       this.funcs = funcs;
     }
 
-    public static <T> Folder<T> def(T t) {
+    public static <T> Folder<T> foldWith(T t) {
       return new Folder<T>(t, List.nil());
     }
 

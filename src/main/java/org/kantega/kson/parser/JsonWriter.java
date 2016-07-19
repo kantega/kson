@@ -10,7 +10,7 @@ public class JsonWriter {
 
   public static String write(JsonValue json) {
     return json.fold(
-        JsonValue.Folder.def("")
+        JsonValue.Folder.foldWith("")
             .onNull(() -> "")
             .onBool(Object::toString)
             .onNumber(BigDecimal::toString)
@@ -26,13 +26,13 @@ public class JsonWriter {
 
   private static String writePretty(JsonValue json, int indent) {
     return json.fold(
-        JsonValue.Folder.def("")
+        JsonValue.Folder.foldWith("")
             .onNull(() -> "")
             .onBool(Object::toString)
             .onNumber(BigDecimal::toString)
             .onString(s -> "\"" + s + "\"")
-            .onArray(arr -> arr.isEmpty() ? "[]" : "[" + arr.tail().foldLeft((sum, val) -> sum + "," + writePretty(val, indent), writePretty(arr.head(), indent)) + "]")
-            .onObject(obj -> mkString(obj.toList().map(pairs -> indent(indent+2)+"\"" + pairs._1() + "\":" + writePretty(pairs._2(), indent+2)), line(indent(indent)+"{"), ",\n", line("\n"+indent(indent) + "}")))
+            .onArray(arr -> arr.isEmpty() ? "[]" : "[\n" + arr.tail().foldLeft((sum, val) -> sum + line(",") + indent(indent+2)+writePretty(val, indent+2), indent(indent+2) + writePretty(arr.head(), indent+2)) + "\n"+indent(indent) +"]")
+            .onObject(obj -> mkString(obj.toList().map(pairs -> indent(indent+2)+"\"" + pairs._1() + "\":" + writePretty(pairs._2(), indent+2)), line("{"), ",\n", "\n"+indent(indent) + "}"))
     );
   }
 
