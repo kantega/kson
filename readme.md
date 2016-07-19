@@ -27,7 +27,7 @@ public class ParseExample {
 }
 ```
 
-The example is pretty self-explnatory, but notice that you expplicitly have to define the type of the json value, for example "jString". 
+The example is pretty self-explanatory, but notice that you explicitly have to define the type of the json value, for example "jString". 
 We have chosen not to provide any shortcuts, and no under the hood conversion. If you would like the convenience of constructing JsonString objects automatically, you can provide your own dsl. 
 (In fact, that is why we use static methods and static imports for the dsl, it makes it very easy to extend the dsl with your own combinators)
 
