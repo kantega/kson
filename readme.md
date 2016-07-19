@@ -93,19 +93,20 @@ public class ParseExample {
 }
 ```
 Observe that the parser yields a ```Validation<String,JsonValue>```. Of you are unfamiliar with the validation type you can google it, there are plenty of articles 
- that introduce the concept. Basically a Validation holds either a failure value (A ```String``` explaining what went wrong in this case) or a success value, you have to use som of its methods or fold it find out.
+ that introduce the concept. Basically a Validation holds either a failure value (A ```String``` explaining what went wrong in this case) 
+ or a success value, you have to use some of its convenience methods or fold it to find out.
 
 
-If you are used to functional programming, you probably want to skip to the conversion section now...
+(If you are used to functional programming, you probably want to skip to the conversion section now...)
 
 Now we have a validation with either a failure message or a JsonValue object, but which one? To make matters slightly worse, we do not even know what type
 of JsonValue we have. (Well - _we_ do - because we wrote the json string we parsed, but imagine you got that string from someone else, over the internet even)
 
-(The idiomatic java way would be to throw an exception in the failure case, and leave that for later (= never), and then maybe cast to the expected kind of
-JsonValue, but that is not safe, and this is a safe library. Plus: we are smarter than that!)
+The idiomatic java solution would be to throw an exception in the failure case, and leave that for later (= never), and then maybe cast to the expected kind of
+JsonValue. But that is not safe, and this is a safe library. Plus: we are smarter than that!
  
 When you can assume that the string you parse has a certain structure (We will cover the case where you cannot or don't want to use a priori 
-knwoledge of the structure later on), you can construct a program that performs some operation on that structure or performs some failurehandling if it does
+knowledge of the structure later on), you can construct a program that performs some operation on that structure or performs some failurehandling if it does
  not match.
 
 Lets make a program that prints the name and age contained in the jsonstructure. 
@@ -135,13 +136,15 @@ public class ParseExample {
            parsedJsonV.validation(
                failmsg->failmsg,
                parsedJson->getNameAndAge.f(parsedJson).validation(failmsg2->failmsg2,nameAndAge->nameAndAge));
-
+ 
+    System.out.println(output);
   }
 }
 ```
 
-The function type in functionaljava is ```F``` (as opposed to ```java.util.function.Function``` in the standard java api). So our name and age extraction consists of two interesting parts:
-First we have a function that accepts a JsonValue and yields a Validation with a string explaining the failure as the fail value, and the name and age concatenated
+
+Our name and age extraction consists of two interesting parts:
+First we have a function (the object of type ```F```) that accepts a JsonValue and yields a Validation with a string explaining the failure as the fail value, and the name and age concatenated
 as the success value. 
 Then we bind the function to the first validation. If the it is a fail, we just get the message. If it is a success, we apply the function to get a new validation which we fold into
 either a new failmessage or the string we are constructing.
@@ -151,7 +154,98 @@ It is a consequence of constructing a safe program. When we have a result, we kn
 in a trivial example like this, but most programs start out as trivial. When we are forced to make qualified choices of how the program is constructed (including hwo to handle failure states)
 early on, we assure ourselves that the application can grow without peril.
 
-##More on using JsonValue
+When we try it, it prints
+
+```
+'name' or 'age' is missing
+
+```
+
+Bummer!
+
+You probably spotted the bug earlier. I expected the age to be a string. If we try to convert to the wrong type we get None, which we converted to a failure message.
+Lets correct the bug and try again:
+
+```java
+public class ParseExample {
+  public static void main(String[] args) {
+
+    final JsonObject json =
+        jObj(
+            field("name", jString("Ola Nordmann")),
+            field("age", jNum(28)),
+            field("favourites", jArray(jString("red"), jString("blue"), jString("purple")))
+        );
+
+    final String jsonString =
+        JsonWriter.writePretty(json);
+
+
+    final Validation<String, JsonValue> parsedJsonV =
+        JsonParser.parse(jsonString);
+
+    final F<JsonValue, Validation<String,String>> getNameAndAge =
+        obj ->
+            getFieldAsText(obj,"name").bind(name->getFieldAsText(obj,"age").map(age->name+", "+age)).toValidation("'name' or 'age' is missing");
+    
+    final String output = 
+           parsedJsonV.validation(
+               failmsg->failmsg,
+               parsedJson->getNameAndAge.f(parsedJson).validation(failmsg2->failmsg2,nameAndAge->nameAndAge));
+ 
+    System.out.println(output);
+  }
+}
+```
+which prints
+```
+Ola Nordmann, 28
+
+```
+
+But it was supposed to be safe, what happened? Well. It _is_ safe, but with a small modification we can let the compiler find bugs like this for us. Lets try again.
+```java
+public class ParseExample {
+  public static void main(String[] args) {
+
+    final JsonObject json =
+        jObj(
+            field("name", jString("Ola Nordmann")),
+            field("age", jNum(28)),
+            field("favourites", jArray(jString("red"), jString("blue"), jString("purple")))
+        );
+
+    final String jsonString =
+        JsonWriter.writePretty(json);
+
+    final Validation<String, JsonValue> parsedJsonV =
+        JsonParser.parse(jsonString);
+
+    final F<JsonValue, Validation<String, P2<String,BigDecimal>>> getNameAndAge =
+        obj ->
+            getFieldAsText(obj, "name").bind(name -> getFieldAsNumber(obj, "age").map(age -> P.p(name, age))).toValidation("'name' or 'age' is missing");
+
+    final String output =
+        parsedJsonV.validation(
+            failmsg -> failmsg,
+            parsedJson -> getNameAndAge.f(parsedJson).validation(failmsg2 -> failmsg2, nameAndAge -> nameAndAge._1()+","+nameAndAge._2()));
+
+    System.out.println(output);
+
+  }
+}
+```
+which also prints
+```
+Ola Nordmann, 28
+
+```
+Can you spot the difference? We have changed out extraction function to return a tuple2 of string and bigdecimal and defer the construction of the string to the latest
+possible moment in our program (often called at "the end of the universe"). Now the compiler will tell us if the mistakenly use the wrong conversion. Later we will use
+ the compiler even more by using converters.
+
+
+##More on using JsonValue, for when you know little or nothing about its structure
 A JsonValue has a very limited set of operations you can perform on it. This is because you do not know exactly what type of value it is. 
 It represents the different kind of values a json structure can contain (boolean, number, string, array,object and null) as subtypes of JsonValue.
 In kson we have opted for the visitor pattern to extract the content of the a json tree. You use a ```JsonValue.Fold``` type to fold a JsonValue into 
@@ -162,4 +256,4 @@ and elses. We felt that folding was the most compact and safe way to deconstruct
 
 
 
-##Converting to and from JsonValue
+##Converting to and from JsonValue, the typesafest way to convert to and from json.

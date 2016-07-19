@@ -57,8 +57,20 @@ public class JsonValues {
     return value.fold(JsonValue.Fold.foldWith(Option.<String>none()).onString(Option::some));
   }
 
+  public static Option<BigDecimal> asNumber(JsonValue value){
+    return value.fold(JsonValue.Fold.foldWith(Option.<BigDecimal>none()).onNumber(Option::some));
+  }
+
+  public static Option<JsonValue> getField(JsonValue value,String field){
+    return value.fold(JsonValue.Fold.foldWith(Option.<JsonValue>none()).onObject(m->m.get(field)));
+  }
+
   public static Option<String> getFieldAsText(JsonValue value,String field){
-    return value.fold(JsonValue.Fold.foldWith(Option.<String>none()).onObject(m->m.get(field).bind(JsonValues::asText)));
+    return getField(value,field).bind(JsonValues::asText);
+  }
+
+  public static Option<BigDecimal> getFieldAsNumber(JsonValue value,String field){
+    return getField(value,field).bind(JsonValues::asNumber);
   }
 
 }
