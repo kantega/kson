@@ -12,6 +12,8 @@ import static fj.data.Option.*;
 
 public class JsonValues {
 
+  private static final JsonNull jNull = new JsonNull();
+
   public static JsonValue jArray(List<JsonValue> vals){
     return new JsonArray(vals);
   }
@@ -37,7 +39,7 @@ public class JsonValues {
   }
 
   public static JsonValue jNull(){
-    return new JsonNull();
+    return jNull;
   }
 
   public static JsonValue jString(String str){
