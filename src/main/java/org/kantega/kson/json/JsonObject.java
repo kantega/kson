@@ -1,11 +1,14 @@
 package org.kantega.kson.json;
 
 import fj.Equal;
+import fj.F;
 import fj.Ord;
 import fj.P2;
 import fj.data.List;
 import fj.data.Option;
 import fj.data.TreeMap;
+
+import java.math.BigDecimal;
 
 public class JsonObject extends JsonValue {
 
@@ -25,6 +28,9 @@ public class JsonObject extends JsonValue {
     return new JsonObject(TreeMap.iterableTreeMap(Ord.stringOrd, vals));
   }
 
+  public JsonObject update(F<TreeMap<String, JsonValue>,TreeMap<String, JsonValue>> f){
+    return new JsonObject(f.f(pairs));
+  }
 
   public JsonObject withField(String name, JsonValue value) {
     return new JsonObject(pairs.set(name, value));

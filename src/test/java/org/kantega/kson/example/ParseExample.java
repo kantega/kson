@@ -16,7 +16,7 @@ import static org.kantega.kson.json.JsonValues.*;
 public class ParseExample {
   public static void main(String[] args) {
 
-    final JsonObject json =
+    final JsonValue json =
         jObj(
             field("name", jString("Ola Nordmann")),
             field("age", jNum(28)),
@@ -31,7 +31,7 @@ public class ParseExample {
 
     final F<JsonValue, Validation<String, P2<String,BigDecimal>>> getNameAndAge =
         obj ->
-            getFieldAsText(obj, "name").bind(name -> getFieldAsNumber(obj, "age").map(age -> P.p(name, age))).toValidation("'name' or 'age' is missing");
+            obj.getFieldAsText("name").bind(name -> obj.getFieldAsNumber("age").map(age -> P.p(name, age))).toValidation("'name' or 'age' is missing");
 
     final String output =
         parsedJsonV.validation(

@@ -1,28 +1,53 @@
 package org.kantega.kson.lens;
 
-import fj.data.Validation;
-import org.kantega.kson.json.JsonObject;
+import fj.F;
+import fj.F2;
+import fj.data.List;
+import fj.data.TreeMap;
 import org.kantega.kson.json.JsonValue;
 
-import static fj.data.Validation.*;
+import static org.kantega.kson.json.JsonValues.jArray;
+import static org.kantega.kson.json.JsonValues.jObj;
+import static org.kantega.kson.lens.LensResult.success;
 
 public class JsonLenses {
 
-  public static JsonLens<JsonValue, JsonValue> field(String fieldName) {
-    return new JsonLens<>(
+  public static JsonValueLens objLens(
+      F<TreeMap<String, JsonValue>, LensResult<JsonValue>> get,
+      F2<JsonValue, TreeMap<String, JsonValue>, TreeMap<String, JsonValue>> set) {
+    return new JsonValueLens(
         jVal ->
-            jVal.fold(
-                JsonValue.Fold
-                    .foldWith(Validation.<String, JsonValue>fail("Not an object"))
-                    .onObject(map ->
-                        map.get(fieldName)
-                            .option(
-                                fail("No field with name " + fieldName),
-                                Validation::success))),
+            jVal.onObject(get).orElse(fail("Not an object")),
         (a, origin) ->
-            origin.fold(JsonValue.Fold.foldWith(Validation.<String, JsonValue>fail("Not an object"))
-                .onObject(map -> success(new JsonObject(map.set(fieldName, a))))
-            )
+            origin.onObject(map -> success(jObj(set.f(a, map)))).orElse(fail("Not an object"))
     );
   }
+
+  public static JsonValueLens arrayLens(
+      F<List<JsonValue>, LensResult<JsonValue>> get,
+      F2<JsonValue, List<JsonValue>, List<JsonValue>> set) {
+    return new JsonValueLens(
+        jVal ->
+            jVal.onArray(get).orElse(fail("Not an array")),
+        (a, origin) ->
+            origin
+                .onArray(list -> success(jArray(set.f(a, list))))
+                .orElse(fail("Not an array"))
+
+    );
+  }
+
+  public static JsonValueLens select(String fieldName) {
+    return objLens(
+        map -> map.get(fieldName).option(LensResult.fail("No field with name " + fieldName + " in object"), LensResult::success),
+        (a, map) -> map.set(fieldName, a)
+    );
+  }
+
+
+  private static <A> LensResult<A> fail(String failmsg) {
+    return LensResult.fail(failmsg);
+  }
+
+
 }

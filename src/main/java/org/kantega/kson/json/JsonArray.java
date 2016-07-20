@@ -2,6 +2,7 @@ package org.kantega.kson.json;
 
 
 import fj.Equal;
+import fj.F;
 import fj.data.List;
 
 public class JsonArray extends JsonValue {
@@ -13,6 +14,10 @@ public class JsonArray extends JsonValue {
 
   public JsonArray(List<JsonValue> values) {
     this.values = values;
+  }
+
+  public JsonArray update(F<List<JsonValue>,List<JsonValue>> f){
+    return new JsonArray(f.f(values));
   }
 
   @Override

@@ -9,15 +9,14 @@ import java.math.BigDecimal;
 public class JsonWriter {
 
   public static String write(JsonValue json) {
-    return json.fold(
-        JsonValue.Fold.foldWith("")
-            .onNull(() -> "")
-            .onBool(Object::toString)
-            .onNumber(BigDecimal::toString)
-            .onString(s -> "\"" + s + "\"")
-            .onArray(arr -> arr.isEmpty() ? "[]" : "[" + arr.tail().foldLeft((sum, val) -> sum + "," + write(val), write(arr.head())) + "]")
-            .onObject(obj -> mkString(obj.toList().map(pairs -> "\"" + pairs._1() + "\":" + write(pairs._2())), "{", ",", "}"))
-    );
+    return json
+        .onNull(() -> "")
+        .onBool(Object::toString)
+        .onNumber(BigDecimal::toString)
+        .onString(s -> "\"" + s + "\"")
+        .onArray(arr -> arr.isEmpty() ? "[]" : "[" + arr.tail().foldLeft((sum, val) -> sum + "," + write(val), write(arr.head())) + "]")
+        .onObject(obj -> mkString(obj.toList().map(pairs -> "\"" + pairs._1() + "\":" + write(pairs._2())), "{", ",", "}"))
+        .orElse("");
   }
 
   public static String writePretty(JsonValue json) {
@@ -25,15 +24,14 @@ public class JsonWriter {
   }
 
   private static String writePretty(JsonValue json, int indent) {
-    return json.fold(
-        JsonValue.Fold.foldWith("")
-            .onNull(() -> "")
-            .onBool(Object::toString)
-            .onNumber(BigDecimal::toString)
-            .onString(s -> "\"" + s + "\"")
-            .onArray(arr -> arr.isEmpty() ? "[]" : "[\n" + arr.tail().foldLeft((sum, val) -> sum + line(",") + indent(indent+2)+writePretty(val, indent+2), indent(indent+2) + writePretty(arr.head(), indent+2)) + "\n"+indent(indent) +"]")
-            .onObject(obj -> mkString(obj.toList().map(pairs -> indent(indent+2)+"\"" + pairs._1() + "\":" + writePretty(pairs._2(), indent+2)), line("{"), ",\n", "\n"+indent(indent) + "}"))
-    );
+    return json
+        .onNull(() -> "")
+        .onBool(Object::toString)
+        .onNumber(BigDecimal::toString)
+        .onString(s -> "\"" + s + "\"")
+        .onArray(arr -> arr.isEmpty() ? "[]" : "[\n" + arr.tail().foldLeft((sum, val) -> sum + line(",") + indent(indent + 2) + writePretty(val, indent + 2), indent(indent + 2) + writePretty(arr.head(), indent + 2)) + "\n" + indent(indent) + "]")
+        .onObject(obj -> mkString(obj.toList().map(pairs -> indent(indent + 2) + "\"" + pairs._1() + "\":" + writePretty(pairs._2(), indent + 2)), line("{"), ",\n", "\n" + indent(indent) + "}"))
+        .orElse("");
   }
 
   private static String mkString(List<String> vals, String pre, String delim, String post) {

@@ -9,6 +9,8 @@ import fj.data.TreeMap;
 
 import java.math.BigDecimal;
 
+import static fj.data.List.nil;
+import static fj.data.Option.none;
 import static org.kantega.kson.json.JsonValue.Fold.*;
 
 public abstract class JsonValue {
@@ -16,36 +18,88 @@ public abstract class JsonValue {
   public static Equal<JsonValue> eq() {
     return Equal.equal(one -> other ->
         one
-            .fold(
-                foldWith(false)
-                    .onString(str1 -> other.fold(foldWith(false).onString(str1::equals)))
-                    .onBool(bool1 -> other.fold(foldWith(false).onBool(bool1::equals)))
-                    .onNumber(num1 -> other.fold(foldWith(false).onNumber(num1::equals)))
-                    .onNull(() -> other.fold(foldWith(false).onNull(() -> true)))
-                    .onObject(obj1 -> other.fold(foldWith(false).onObject(Equal.treeMapEqual(Equal.stringEqual, eq()).eq(obj1))))
-                    .onArray(arr -> other.fold(foldWith(false).onArray(Equal.listEqual(eq()).eq(arr))))));
+            .onString(str1 -> other.onString(str1::equals).orElse(false))
+            .onBool(bool1 -> other.onBool(bool1::equals).orElse(false))
+            .onNumber(num1 -> other.onNumber(num1::equals).orElse(false))
+            .onNull(() -> other.onNull(() -> true).orElse(false))
+            .onObject(obj1 -> other.onObject(Equal.treeMapEqual(Equal.stringEqual, eq()).eq(obj1)).orElse(false))
+            .onArray(arr -> other.onArray(Equal.listEqual(eq()).eq(arr)).orElse(false))
+            .orElse(false)
+    );
   }
 
-  public <T> T fold(Fold<T> f){
-    return f.apply(this);
+  public Option<String> asText(){
+    return onString(Option::some).orElse(none());
+  }
+
+  public Option<BigDecimal> asNumber(){
+    return onNumber(Option::some).orElse(none());
+  }
+
+  public Option<Boolean> asBool(){
+    return onBool(Option::some).orElse(none());
+  }
+
+  public Option<JsonValue> getField(String field){
+    return onObject(m->m.get(field)).orElse(none());
+  }
+
+  public Option<JsonValue> setField(String name, JsonValue value){
+    return onObject(map->Option.some(JsonValues.jObj(map.set(name,value)))).orElse(none());
+  }
+
+  public Option<String> getFieldAsText(String field){
+    return getField(field).bind(JsonValue::asText);
+  }
+
+  public Option<BigDecimal> getFieldAsNumber(String field){
+    return getField(field).bind(JsonValue::asNumber);
+  }
+
+  public Option<Boolean> getFieldAsBool(String field){
+    return getField(field).bind(JsonValue::asBool);
+  }
+
+  public <T> Fold<T> onString(F<String, T> f) {
+    return Fold.<T>newFold(this).onString(f);
+  }
+
+  public <T> Fold<T> onNumber(F<BigDecimal, T> f) {
+    return Fold.<T>newFold(this).onNumber(f);
+  }
+
+  public <T> Fold<T> onArray(F<List<JsonValue>, T> f) {
+    return Fold.<T>newFold(this).onArray(f);
+  }
+
+  public <T> Fold<T> onObject(F<TreeMap<String, JsonValue>, T> f) {
+    return Fold.<T>newFold(this).onObject(f);
+  }
+
+  public <T> Fold<T> onNull(F0<T> f) {
+    return Fold.<T>newFold(this).onNull(f);
+  }
+
+  public <T> Fold<T> onBool(F<Boolean, T> f) {
+    return Fold.<T>newFold(this).onBool(f);
   }
 
 
   public static class Fold<T> {
-    final T                          def;
+    final JsonValue                  value;
     final List<F<Object, Option<T>>> funcs;
 
-    Fold(T def, List<F<Object, Option<T>>> funcs) {
-      this.def = def;
+    Fold(JsonValue value, List<F<Object, Option<T>>> funcs) {
+      this.value = value;
       this.funcs = funcs;
     }
 
-    public static <T> Fold<T> foldWith(T t) {
-      return new Fold<>(t, List.nil());
+    static <T> Fold<T> newFold(JsonValue value) {
+      return new Fold<>(value, nil());
     }
 
     <A extends JsonValue> Fold<T> match(Class<A> c, F<A, T> f) {
-      return new Fold<>(def, funcs.cons(obj -> c.isInstance(obj)
+      return new Fold<>(value, funcs.cons(obj -> c.isInstance(obj)
           ? Option.some(f.f(c.cast(obj)))
           : Option.none()));
     }
@@ -74,8 +128,8 @@ public abstract class JsonValue {
       return match(JsonBool.class, jbool -> f.f(jbool.value));
     }
 
-    public <A extends JsonValue> T apply(A value) {
-      return funcs.foldLeft((maybeT, f) -> maybeT.orElse(f.f(value)), Option.<T>none()).orSome(def);
+    public T orElse(T defaultValue) {
+      return funcs.foldLeft((maybeT, f) -> maybeT.orElse(f.f(value)), Option.<T>none()).orSome(defaultValue);
     }
   }
 

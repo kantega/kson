@@ -1,6 +1,7 @@
 package org.kantega.kson.json;
 
 import fj.Equal;
+import fj.F;
 
 import java.math.BigDecimal;
 
@@ -13,6 +14,10 @@ public class JsonNumber extends JsonValue {
 
   public JsonNumber(BigDecimal value) {
     this.value = value;
+  }
+
+  public JsonNumber update(F<BigDecimal,BigDecimal> f){
+    return new JsonNumber(f.f(value));
   }
 
   @Override

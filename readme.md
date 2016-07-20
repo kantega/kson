@@ -9,6 +9,13 @@ leave your objects in an undefined or undesired state. If you follow the types, 
 The Kson library depends on functionaljava and functionaljava-quickcheck. The parser is implemented by using the parser combinators from the functionaljava
 library. Read more on [functionaljava.org](https://functionaljava.org/)
 
+Beware though: This library is slow. Very slow. It uses over 100 times more time to parse a json document
+than other parsers. Does it matter to you? Probably not, as most likely your database or network is the bottneck.
+However, if you _do_ discover that indeed the json parsing is the bottlneck of your application, please
+let us know an dwe will spend some time optimizing.
+Or use one of the unsafe libraries out there. You probably know them already.
+
+
 ##Building, writing and parsing json
 
 Lets begin by constructing some json values with the ```JsonValues``` class. By importing the static methods of the class, you get a nice and readable dsl for constructing 
@@ -261,9 +268,148 @@ of combining Lenses together as we wish, and create arbitrary combinations and n
 without having the json object at hand. 
 This sounds like mumbo jumbo for most java-developers, so lets look at an example:
 
-...
+```java
+public class LensExample {
+
+  public static void main(String[] args) {
+
+    JsonLens<JsonValue, String> zipLens =
+        JsonLenses.select("address").select("zip").asString();
 
 
+    JsonValue userjson =
+        jObj(
+            field("name", jString("Ole Normann")),
+            field("address", jObj(
+                field("street", jString("Kongensgate 3")),
+                field("zip", jString("1234")) //Observe the presence of this field
+            ))
+        );
+
+    JsonValue invalidUserJson =
+        jObj(
+            field("name", jString("Kari Normann")),
+            field("address", jObj(
+                field("street", jString("Kongensgate 3"))
+                //Behold the missing zipcode field
+            ))
+        );
+
+    
+    LensResult<String> zipCode = 
+        zipLens.get(userjson);
+    
+    System.out.println(zipCode); //The zipLens yields the zipcode as expected
+
+    LensResult<String> noZipCode =
+        zipLens.get(invalidUserJson);
+
+    System.out.println(noZipCode); //The zipLens yields no zipcode, also as expected
+    
+  }
+}
+```
+Not too shabby, considering this is safe. But why bother with lenses? We could just as well write
+``` userjson.getField("address").bind(f->f.getFieldAsText("zip")).getOrElse("No zipcode in object)```.
+There are three advantages of using zippers over getters:
+ * They are values, you can use them like any other value, pass them as arguments and so forth.
+ * They compose, so you can mix them as you like
+ * They can update inner values in an immutable fashion
+ 
+(We leave as an excercise for the reader to prove that these points are indeed advantages. Please make a deeply nested
+object and update a leaf value in a safe way)
+
+Lets try a less trivial example with an update:
+```java
+public class LensExample {
+
+  public static void main(String[] args) {
+
+    JsonLens<JsonValue, String> zipLens =
+        JsonLenses.select("address").select("zip").asString();
+
+
+    JsonValue userjson =
+        jObj(
+            field("name", jString("Ole Normann")),
+            field("address", jObj(
+                field("street", jString("Kongensgate 3")),
+                field("zip", jString("1234")) //Observe the presence of this field
+            ))
+        );
+
+    JsonValue invalidUserJson =
+        jObj(
+            field("name", jString("Kari Normann")),
+            field("address", jObj(
+                field("street", jString("Kongensgate 3"))
+                //Behold the missing zipcode field
+            ))
+        );
+
+    JsonValue userModel =
+        jObj(
+            field("model",
+                jObj(
+                    field("users", jArray(userjson, invalidUserJson)),
+                    field("leader", userjson)
+                )));
+
+
+    JsonValueLens modelLens =
+        JsonLenses.select("model");
+
+    JsonValueLens leaderLens =
+        JsonLenses.select("leader");
+
+    JsonValueLens usersLens =
+        JsonLenses.select("users");
+
+    //Replace leader
+    JsonValue updatedLeaderModel =
+        modelLens.then(leaderLens).setF(userModel, invalidUserJson);
+
+
+    //Update zipcode of last user in array
+    JsonValue modelWithZips =
+        modelLens.then(usersLens).asArray().modF(updatedLeaderModel, list -> list.map(zipLens.setF("1234")));
+
+    System.out.println(JsonWriter.writePretty(modelWithZips));
+  }
+}
+```
+
+The example prints:
+```
+{
+  "model":{
+    "leader":{
+      "address":{
+        "street":"Kongensgate 3"
+      },
+      "name":"Kari Normann"
+    },
+    "users":[
+      {
+        "address":{
+          "street":"Kongensgate 3",
+          "zip":"1234"
+        },
+        "name":"Ole Normann"
+      },
+      {
+        "address":{
+          "street":"Kongensgate 3",
+          "zip":"1234"
+        },
+        "name":"Kari Normann"
+      }
+    ]
+  }
+}
+```
+Which is what we could expect: The "leader" field has been replaced by the user wihtout a zipcode, and
+the zipcode of the users in the list has been updated.
 
 ##Converting to and from JsonValue, the typesafest way to convert to and from json.
 
