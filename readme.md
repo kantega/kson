@@ -241,7 +241,7 @@ Ola Nordmann, 28
 
 ```
 Can you spot the difference? We have changed the extraction function to return a tuple2 of string and bigdecimal and defer the construction of the string to the latest
-possible moment in our program (often called at "the end of the universe"). Now the compiler will tell us if we mistakenly use the wrong conversion. Later we will use
+possible moment in our program (often called "the end of the universe"). Now the compiler will tell us if we mistakenly use the wrong conversion. Later we will use
  the compiler even more by using converters.
 
 
@@ -251,6 +251,15 @@ It represents the different kind of values a json structure can contain (boolean
 In kson we have opted for the visitor pattern to extract the content of the a json tree. You use a ```JsonValue.Fold``` type to fold a JsonValue into 
 the desired type by calling ```JsonValue.fold(JsonValue.Fold)```.  Most java based json libraries use the unsafe _is***_ idiom in conjunction with a jungle of ifs
 and elses. We felt that folding was the most compact and safe way to deconstruct a json tree.
+
+The downside with folding the datastructure directly is that json is a nested structure, and
+we would like to easily get to the deepnodes without manually having to handle all possibilities
+along the way. That is what _Lenses_ are for! A Lens is an object that knows how to extract a value
+from an object, and to set a value in an object - in a immutable manner. Think of it as a setter
+and getter pair, but not attached to the object it sets and gets from. This gives us the advantage 
+of combining Lenses together as we wish, and create arbitrary combinations and nested goodness
+without having the json object at hand. 
+This sounds like mumbo jumbo for most java-developers, so lets look at an example:
 
 ...
 
