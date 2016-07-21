@@ -488,8 +488,8 @@ concern itself with state, we can forget about that all together: We can work co
 
 ###Basics
 
-Now, converting between our domain objects and json can be represented by two functions: An encoder which converts to json, 
-and a decoder which converts from json. These two functions can be represented as functional interfaces.
+Now, converting between our domain objects and json can be represented by two functions: An encoder wich converts to json, 
+and a decoder wich converts from json. These two functions can be represented as functional interfaces.
 
 The decoder can look like this
 ```java
@@ -526,7 +526,7 @@ a function from _A_ to _B_. This means that the functional method _f()_ on ```F`
 Take note that the function does not change anything in the surroundings, it has no sideeffects. That means that
  calling the function with the same argument will always yield the same results.
 We extend ```F``` for two reasons: It makes it clear we think of the constructs as functions, but it also 
-gives us the benefits of using the functionaljava library, which has a lot of functionality around functions.
+gives us the benefits of using the functionaljava library, wich has a lot of functionality around functions.
 
 Now we have defined our encoder and decoder functions, but we have no implementations of them yet. Lets change that
 by implemementing the simplest possible encoder: An encoder for strings:
@@ -564,20 +564,19 @@ program safer too, since _null_ is netiher typesafe nor carries semantic meaning
 and understand its meaning without looking at the context, for example the field or variable it is assigned to.
 
 But how do we represent the case when we have no value for field? Turns out java added a type to represent that:
-```Optional<T>```, which is intertpreted as "The object can contain zero or one element of type T, but you 
-do not know". We use the type ```Option<A>``` from fj, but for consistence. They are pretty eqvivalent.
+`Optional<T>`, which is intertpreted as "The object can contain zero or one element of type T, but you 
+do not know". We use the type `Option<A>` from fj, but for consistence. They are pretty eqvivalent.
 
 In json a missing value is represented by the keyword _null_. But when we encode, we know the expected type, so we
 can use an ```Option<A>``` to hold the unknown state (_null_ or value), but how do we convert?
 Lets examine the type of the function first:
 
-We want to convert a JsonValue that can be either _null_ or some primitive value, into an ```Option<A>``` where 
+We want to convert a JsonValue that can be either _null_ or some primitive value, into an `Option<A>` where 
 ```A``` is the type of the value. 
 
-If we know the type is either _null_ or ```String``` we could write 
-```JsonEncoder<Option<String>>```, but that only works for strings. We want to be able to make all types
-optional:
-```JsonEncoder<Option<A>>```.
+If we know the type is either _null_ or `String` we could write 
+`JsonEncoder<Option<String>>`, but that only works for strings. We want to be able to make all types
+optional: `JsonEncoder<Option<A>>`.
 Lets implement this:
 
 ```
@@ -586,7 +585,7 @@ Lets implement this:
   }  
 ```
 
-So what do we actally return? It turns out we need to know how we encode ```A``` before we can encode ```Option<A>```, so we supply
+So what do we actally return? It turns out we need to know how we encode `A` before we can encode `Option<A>`, so we supply
 that:
 
 ```
@@ -605,7 +604,7 @@ into a transformer for optional values of that type.
 
 ###Arrays
 Lets dig deeper  and go for a non-primitive json types, for example array:
-We want to transform a List with As - ```List<A>``` to a json array. Its just as with option, of we can encode
+We want to transform a List with As - `List<A>` to a json array. Its just as with option, of we can encode
 A, we can encode a List og As.
 
 ```
@@ -616,11 +615,321 @@ A, we can encode a List og As.
 
 Now, in json, an array can interchange its the types of its element, meaning you can mix numbers, string objects etc.
 In a typed language (like java), that sort of structure is called an HList (for Heterogenous List). You basically
-have to provide a converter for all the elements which makes it a bit more complicated. Lets save that for later.
+have to provide a converter for all the elements wich makes it a bit more complicated. Lets save that for later.
+
+###Objects
+The crux of any conversion is of course nested objects. Since json usually transmits data, we only care about directed
+asyclic object-graphs.
+
+Again, as with arrays, it seems intuitive that if we know how to encode the contents of an object, we can encode
+the object itself. But since each field in the object can have its own type, we have to supply the
+encoder with encoders for all the fields, plus the field names. Since the fieldname-fieldvalue pair has no
+json representation, we use the fj tuple type (`P2`) to represent the pair: `P2<String,JsonValue>`.
+An object basically consists of a list of pairs, so we provide a list of fieldnames and converters to the 
+object converter.
+
+First take:
+```
+  public static <X> JsonEncoder<X> objectEncoder(P2<String,JsonEncoder<?>>... fieldEncoders){
+    return x->???;
+  }
+```
+Its obvious that we are missing a couple of key points here. First - we need a way do extract the values from
+our object, and second - we need to know the types of the fields. Lets split that into two problems, and solve the
+two cases separately, and the merge them together (also a nice trait of fp)
+
+An object of a type can be represented as a tuple of types of the fields of the object. 
+A User
+```
+static class User{
+    final String       name;
+    final int          age;
+    final List<String> favourites;
+
+    User(String name, int age, List<String> favourites) {
+      this.name = name;
+      this.age = age;
+      this.favourites = favourites;
+    }
+  }
+
+```
+
+can be represented as a tuple 3 like this `P3<String,Integer,List<String>`, it contains the same information
+except the semantic names of the fields.
+
+Lets write an encoder for a `P3`
+```
+  public static <A, B, C> JsonEncoder<P3<A, B, C>> p3Encoder(
+      P2<String, JsonEncoder<A>> a,
+      P2<String, JsonEncoder<B>> b,
+      P2<String, JsonEncoder<C>> c) {
+    return p3 ->
+        JsonValues.jObj(
+            P.p(a._1(), a._2().encode(p3._1())),
+            P.p(b._1(), b._2().encode(p3._2())),
+            P.p(c._1(), c._2().encode(p3._3()))
+        );
+  }
+```
+That looks like a lot of work. Too many underscores numbers and similar looking statements, this is too errorprone
+to be safe. Lets fix that by creating a type FieldEncoder<A>`` that puts fields-value pairs into an object.
+```
+public interface FieldEncoder<A> {
+
+    JsonObject apply(JsonObject obj, A a);
+
+  }
+```
+And then lets make a constructor (=static factory function) for values of that type.
+
+```
+  public static <A> FieldEncoder<A> field(String name, JsonEncoder<A> a) {
+      return (obj, va) -> obj.withField(name, a.encode(va));
+  }
+```
+
+and change the `P3` encoder
+```
+  public static <A, B, C> JsonEncoder<P3<A, B, C>> obj(
+        FieldEncoder<A> a,
+        FieldEncoder<B> b,
+        FieldEncoder<C> c) {
+      return t ->
+          and(a, and(b, c)).apply(JsonObject.empty, p(t._1(), p(t._2(), t._3())));
+    }
+    
+    //We added the and function to make it easier for us to add two FieldEncoders.
+    static <A, B> FieldEncoder<P2<A, B>> and(FieldEncoder<A> fa, FieldEncoder<B> fb) {
+        return (obj, t) -> fb.apply(fa.apply(obj, t._1()), t._2());
+      }
+```
 
 
+A little nicer. Observe that only typed information changes between the calls to the FieldEncoder. The compiler will
+tell us if we miss out mark. But we need to be able to convert objects with fieldcount ≠ 3, so we will
+have to manually craft conversions from P2 up to P8 (the highets tuple in fj).
+
+The function of arity 8 looks like this:
+```
+ public static <A, B, C, D, E, FF,G,H> JsonEncoder<P8<A, B, C, D, E, FF,G,H>> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      FieldEncoder<D> d,
+      FieldEncoder<E> e,
+      FieldEncoder<FF> f,
+      FieldEncoder<G> g,
+      FieldEncoder<H> h) {
+    return t ->
+        and(a, and(b, and(c, and(d, and(e, and(f,and(g,h)))))))
+            .apply(JsonObject.empty, p(t._1(), p(t._2(), p(t._3(), p(t._4(), p(t._5(), p(t._6(),p(t._7(),t._8()))))))));
+  }
+```
+
+That is a mouthful of type information, but we only have to write it once, and it is safe. Maybe we will come back later 
+and try to find a more elegant way to encode json objects, probably not since it works and is already written.
+
+Lets see what it will look like in an example.
+We want to create an encoder for our `User` objects. The observant reader however will have noticed by now that the field _age_
+in the User class is of type _int_, but we don't have an encoder for ints. We address that first by _contramap_ing the 
+bigDecimalDecoder
+```
+public static final JsonEncoder<Integer> integerEncoder =
+      bigDecimalEncoder.contramap(BigDecimal::valueOf);
+```
+_Contramap_ is the opposite of map. We change the "inner type" of the decoder to Intger by supplying it with a 
+function from Integer to BigDecimal. When you use the encoder, you give it an Integer, and it applies the function you give
+it in the contramap before it passes it down to the BigDecimal encoder. Yo apss it and Integer, but it is writen to json as
+a BigDecimal.
 
 
+```java
+public class EncodeExample {
+
+  public static class User {
+    public final String       name;
+    public final int          age;
+    public final List<String> favourites;
+
+    User(String name, int age, List<String> favourites) {
+      this.name = name;
+      this.age = age;
+      this.favourites = favourites;
+    }
+  }
+
+
+  public static void main(String[] args) {
+
+    JsonEncoder<User> userEncoder =
+        obj(
+            field("name", stringEncoder),
+            field("age",integerEncoder),
+            field("favourites",arrayEncoder(stringEncoder))
+        ).contramap(user-> p(user.name,user.age,user.favourites));
+
+  }
+}
+```
+You can see that we also use _contramap_ to convert from our `User` to a tuple3 (`P3`). It looks ugly though, and we dont
+want to write _contramap_ all over our code, so lets embed that into our dsl. 
+
+Our highest arity converter for objects looks like this
+```
+ public static <A, B, C, D, E, FF, G, H,X> JsonEncoder<X> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      FieldEncoder<D> d,
+      FieldEncoder<E> e,
+      FieldEncoder<FF> ff,
+      FieldEncoder<G> g,
+      FieldEncoder<H> h,
+      F<X,P8<A,B,C,D,E,FF,G,H>> f) {
+    return obj(a,b,c,d,e,ff,g,h).contramap(f);
+  }
+```
+
+its just calls the mapper for the tupled value and contramaps with f.
+
+Now we can tidy up our example a bit
+```
+JsonEncoder<User> userEncoder =
+        obj(
+            field("name", stringEncoder),
+            field("age", integerEncoder),
+            field("favourites", arrayEncoder(stringEncoder)),
+            user-> p(user.name,user.age,user.favourites)
+        );
+```
+That looks really neat.
+
+
+Lets use the model from the Lens example, and implement that using domain objects
+```java
+public class EncodeExample {
+
+
+  public static class Address {
+    final String street;
+    final String zip;
+
+    public Address(String street, String zip) {
+      this.street = street;
+      this.zip = zip;
+    }
+  }
+
+  static class User {
+    final String  name;
+    final Address address;
+
+    User(String name, Address address) {
+      this.name = name;
+      this.address = address;
+    }
+  }
+
+  static class UserModel {
+    final User       leader;
+    final List<User> users;
+
+    UserModel(User leader, List<User> users) {
+      this.leader = leader;
+      this.users = users;
+    }
+  }
+
+  static class TopLevel {
+    final UserModel model;
+
+    TopLevel(UserModel model) {
+      this.model = model;
+    }
+  }
+
+
+  public static void main(String[] args) {
+
+    JsonEncoder<Address> addressJsonEncoder =
+        obj(
+            field("street", stringEncoder),
+            field("zip", stringEncoder),
+            addr -> p(addr.street, addr.zip)
+        );
+
+    JsonEncoder<User> userEncoder =
+        obj(
+            field("name", stringEncoder),
+            field("address", addressJsonEncoder),
+            user -> p(user.name, user.address)
+        );
+
+    JsonEncoder<UserModel> userModelJsonEncoder =
+        obj(
+            field("leader", userEncoder),
+            field("users", arrayEncoder(userEncoder)),
+            um -> p(um.leader, um.users)
+        );
+
+    JsonEncoder<TopLevel> topLevelJsonEncoder =
+        obj(
+            field("model", userModelJsonEncoder),
+            tl -> tl.model
+        );
+
+
+    TopLevel tl =
+        new TopLevel(
+            new UserModel(
+                new User("Ola Normann", new Address("abcstreet", "1234")),
+                List.list(
+                    new User("Kari Normann", new Address("defstreet", "4321")),
+                    new User("Jens Normann", new Address("ghbstreet", "4444")))
+            )
+        );
+
+    JsonValue json =
+        topLevelJsonEncoder.encode(tl);
+
+    System.out.print(JsonWriter.writePretty(json));
+  }
+}
+```
+
+It prints 
+```
+{
+  "model":{
+    "leader":{
+      "address":{
+        "street":"abcstreet",
+        "zip":"1234"
+      },
+      "name":"Ola Normann"
+    },
+    "users":[
+      {
+        "address":{
+          "street":"defstreet",
+          "zip":"4321"
+        },
+        "name":"Kari Normann"
+      },
+      {
+        "address":{
+          "street":"ghbstreet",
+          "zip":"4444"
+        },
+        "name":"Jens Normann"
+      }
+    ]
+  }
+}
+```
+
+It works!
 
 
 

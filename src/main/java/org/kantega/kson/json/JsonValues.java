@@ -30,6 +30,7 @@ public class JsonValues {
     return new JsonObject(pairs);
   }
 
+  @SafeVarargs
   public static JsonValue jObj(P2<String,JsonValue> ... fields){
     return jObj(List.arrayList(fields));
   }

@@ -1,10 +1,14 @@
 package org.kantega.kson.codec;
 
+import fj.*;
 import fj.data.List;
 import fj.data.Option;
+import org.kantega.kson.json.JsonObject;
 import org.kantega.kson.json.JsonValues;
 
 import java.math.BigDecimal;
+
+import static fj.P.p;
 
 public class JsonEncoders {
 
@@ -13,6 +17,9 @@ public class JsonEncoders {
 
   public static final JsonEncoder<BigDecimal> bigDecimalEncoder =
       JsonValues::jNum;
+
+  public static final JsonEncoder<Integer> integerEncoder =
+      bigDecimalEncoder.contramap(BigDecimal::valueOf);
 
   public static final JsonEncoder<Boolean> boolEncoder =
       JsonValues::jBool;
@@ -23,6 +30,182 @@ public class JsonEncoders {
 
   public static <A> JsonEncoder<List<A>> arrayEncoder(JsonEncoder<A> aEncoder) {
     return list -> JsonValues.jArray(list.map(aEncoder::encode));
+  }
+
+
+  public static <A> FieldEncoder<A> field(String name, JsonEncoder<A> a) {
+    return (obj, va) -> obj.withField(name, a.encode(va));
+  }
+
+  public static <A> JsonEncoder<A> obj(FieldEncoder<A> fe) {
+    return a -> fe.apply(JsonObject.empty, a);
+  }
+
+  public static <A, X> JsonEncoder<X> obj(FieldEncoder<A> fe, F<X, A> f) {
+    return obj(fe).contramap(f);
+  }
+
+  public static <A, B> JsonEncoder<P2<A, B>> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b) {
+    return p ->
+        and(a, b).apply(JsonObject.empty, p);
+  }
+
+  public static <A, B, X> JsonEncoder<X> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      F<X, P2<A, B>> f) {
+    return
+        obj(a, b).contramap(f);
+  }
+
+  public static <A, B, C> JsonEncoder<P3<A, B, C>> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c) {
+    return t ->
+        and(a, and(b, c)).apply(JsonObject.empty, p(t._1(), p(t._2(), t._3())));
+  }
+
+  public static <A, B, C, X> JsonEncoder<X> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      F<X, P3<A, B, C>> f) {
+    return
+        obj(a, b, c).contramap(f);
+  }
+
+  public static <A, B, C, D> JsonEncoder<P4<A, B, C, D>> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      FieldEncoder<D> d) {
+    return t ->
+        and(a, and(b, and(c, d)))
+            .apply(JsonObject.empty, p(t._1(), p(t._2(), p(t._3(), t._4()))));
+  }
+
+  public static <A, B, C, D, X> JsonEncoder<X> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      FieldEncoder<D> d,
+      F<X, P4<A, B, C, D>> f) {
+    return obj(a, b, c, d).contramap(f);
+  }
+
+  public static <A, B, C, D, E> JsonEncoder<P5<A, B, C, D, E>> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      FieldEncoder<D> d,
+      FieldEncoder<E> e) {
+    return t ->
+        and(a, and(b, and(c, and(d, e))))
+            .apply(JsonObject.empty, p(t._1(), p(t._2(), p(t._3(), p(t._4(), t._5())))));
+  }
+
+  public static <A, B, C, D, E, X> JsonEncoder<X> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      FieldEncoder<D> d,
+      FieldEncoder<E> e,
+      F<X, P5<A, B, C, D, E>> f) {
+    return
+        obj(a, b, c, d, e).contramap(f);
+  }
+
+  public static <A, B, C, D, E, FF> JsonEncoder<P6<A, B, C, D, E, FF>> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      FieldEncoder<D> d,
+      FieldEncoder<E> e,
+      FieldEncoder<FF> f) {
+    return t ->
+        and(a, and(b, and(c, and(d, and(e, f)))))
+            .apply(JsonObject.empty, p(t._1(), p(t._2(), p(t._3(), p(t._4(), p(t._5(), t._6()))))));
+  }
+
+  public static <A, B, C, D, E, FF, X> JsonEncoder<X> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      FieldEncoder<D> d,
+      FieldEncoder<E> e,
+      FieldEncoder<FF> ff,
+      F<X, P6<A, B, C, D, E, FF>> f) {
+    return obj(a, b, c, d, e, ff).contramap(f);
+  }
+
+  public static <A, B, C, D, E, FF, G> JsonEncoder<P7<A, B, C, D, E, FF, G>> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      FieldEncoder<D> d,
+      FieldEncoder<E> e,
+      FieldEncoder<FF> f,
+      FieldEncoder<G> g) {
+    return t ->
+        and(a, and(b, and(c, and(d, and(e, and(f, g))))))
+            .apply(JsonObject.empty, p(t._1(), p(t._2(), p(t._3(), p(t._4(), p(t._5(), p(t._6(), t._7())))))));
+  }
+
+  public static <A, B, C, D, E, FF, G, X> JsonEncoder<X> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      FieldEncoder<D> d,
+      FieldEncoder<E> e,
+      FieldEncoder<FF> ff,
+      FieldEncoder<G> g,
+      F<X, P7<A, B, C, D, E, FF, G>> f) {
+    return obj(a, b, c, d, e, ff, g).contramap(f);
+  }
+
+  public static <A, B, C, D, E, FF, G, H> JsonEncoder<P8<A, B, C, D, E, FF, G, H>> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      FieldEncoder<D> d,
+      FieldEncoder<E> e,
+      FieldEncoder<FF> f,
+      FieldEncoder<G> g,
+      FieldEncoder<H> h) {
+    return t ->
+        and(a, and(b, and(c, and(d, and(e, and(f, and(g, h)))))))
+            .apply(JsonObject.empty, p(t._1(), p(t._2(), p(t._3(), p(t._4(), p(t._5(), p(t._6(), p(t._7(), t._8()))))))));
+  }
+
+  public static <A, B, C, D, E, FF, G, H,X> JsonEncoder<X> obj(
+      FieldEncoder<A> a,
+      FieldEncoder<B> b,
+      FieldEncoder<C> c,
+      FieldEncoder<D> d,
+      FieldEncoder<E> e,
+      FieldEncoder<FF> ff,
+      FieldEncoder<G> g,
+      FieldEncoder<H> h,
+      F<X,P8<A,B,C,D,E,FF,G,H>> f) {
+    return obj(a,b,c,d,e,ff,g,h).contramap(f);
+  }
+
+  public interface FieldEncoder<A> {
+
+    JsonObject apply(JsonObject obj, A a);
+
+    default <B> FieldEncoder<B> contramap(F<B, A> f) {
+      return (obj, b) -> apply(obj, f.f(b));
+    }
+
+  }
+
+
+  static <A, B> FieldEncoder<P2<A, B>> and(FieldEncoder<A> fa, FieldEncoder<B> fb) {
+    return (obj, t) -> fb.apply(fa.apply(obj, t._1()), t._2());
   }
 
 }
