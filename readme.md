@@ -938,7 +938,7 @@ Not too shabby.
 
 Lets see what this will look like when we use our encoder in in an example.
 We want to create an encoder for our `User` objects. The observant reader however will have noticed by now that the field _age_
-in the User class is of type _int_, but we don't have an encoder for ints. We address that first by _contramap_ing the 
+in the User class is of type _int_, but we don't have an encoder for ints. We address that first by _contramap_ ing the 
 bigDecimalDecoder
 ```
 public static final JsonEncoder<Integer> integerEncoder =
@@ -946,7 +946,7 @@ public static final JsonEncoder<Integer> integerEncoder =
 ```
 _Contramap_ is the opposite of map. We change the "inner type" of the decoder to Intger by supplying it with a 
 function from Integer to BigDecimal. When you use the encoder, you give it an Integer, and it applies the function you give
-it in the contramap before it passes it down to the BigDecimal encoder. Yo apss it and Integer, but it is writen to json as
+it in the contramap before it passes it down to the BigDecimal encoder. You pass it an Integer, but it is written to json as
 a BigDecimal.
 
 
