@@ -637,7 +637,7 @@ Did i mention everything is immutable? Nothing unexpected will happen here. Ever
 
 ##Behind the scenes
 ####or how to build an excellent library by combining many little parts
-Building this library was actually an excercise in teaching functional progarmming. If it served its purpose
+Building this library was actually an excercise in teaching functional programming. If it served its purpose
 awaits to be seen.
 
 Our main fascination for functional programming arose when we discovered that functionally written programs
