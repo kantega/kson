@@ -1140,7 +1140,11 @@ It works!
 By using the basic encoders for numbers,booleans,null,arrays and objects we now can 
 map any domain object of any complexity to json using contramap. But we are only halfway there,
 we need to decode to. Unfortenately that is a little bit harder, since we need to 
-handle the case when the json tree does not have the shape we need to build our domain model.
+handle the case when the json tree does not have the shape we need to build our domain model. But with 
+the knowledge you have gained you will be able to figure out how to proceed.
+Remember: Think of how you transform your data, and the typesystem will guide you
+along the way. (Hint: start with the function that decodes to data, it would probably
+look something like `JsonValue -> JsonResult<A>`. Look in the codec package for guidance)
 
 This concludes the behind the scenes part. We hope you learned somethign by reading it, or at least give us feedback
 about typos, errors and how to improve.
