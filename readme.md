@@ -944,7 +944,7 @@ bigDecimalDecoder
 public static final JsonEncoder<Integer> integerEncoder =
       bigDecimalEncoder.contramap(BigDecimal::valueOf);
 ```
-_Contramap_ is the opposite of map. We change the "inner type" of the decoder to Intger by supplying it with a 
+_Contramap_ is the opposite of map. We change the "inner type" of the decoder to Integer by supplying it with a 
 function from Integer to BigDecimal. When you use the encoder, you give it an Integer, and it applies the function you give
 it in the contramap before it passes it down to the BigDecimal encoder. You pass it an Integer, but it is written to json as
 a BigDecimal.
