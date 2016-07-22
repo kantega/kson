@@ -643,13 +643,18 @@ awaits to be seen.
 Our main fascination for functional programming arose when we discovered that functionally written programs
 have certain advantages over idiomatic java (commonly referred to as "objectoriented programming"):
 
- * The programs became smaller, meaning less code to write and maintain
- * The programs became safer, less exceptions, bugs and mistakes were made.
+ * The programs became smaller - less code to write and maintain
+ * The programs became safer - fever exceptions, bugs and mistakes.
  * We found the functional paradigm was easier to reason about, and hence the architecture and design of our
-were improved (i know, it is subjective. But try for yourself)
+programs were improved (i know, it is subjective. But try for yourself)
  
-By writing this library we wanted to demostrate how easy it is to build a solid library (that beats all the jsonlibraries i know of
-regarding all aspects except runtime speed) by using only a limited set of buildingblocks.
+By writing this library we wanted to demonstrate how easy it is to build a solid library - which beats all the jsonlibraries i know of
+regarding all aspects except runtime speed - by using only a limited set of buildingblocks.
+Now, the term " easy" is of course a bit misleadin. Its easy for us, but if you are not used
+to functions, then it might take some time to get used to. But if you take your time
+a new world will reveal itself before your eyes. I guarantee it! <sup>1</sup>) 
+
+<sup>1) Not a guarantee</sup>
 
 This library is built up by four distinct parts. Used by the others, and core to the library are the _data-objects_ 
 (org.kantega.kson.json) that represent
