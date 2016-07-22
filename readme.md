@@ -636,7 +636,7 @@ them as static instances in your classes for reuse, and combine them how you lik
 Did i mention everything is immutable? Nothing unexpected will happen here. Ever. We promise.
 
 ##Behind the scenes
-_or how to build an excellent library by combining many little parts_
+####or how to build an excellent library by combining many little parts
 Building this library was actually an excercise in teaching functional progarmming. If it served its purpose
 awaits to be seen.
 
