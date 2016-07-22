@@ -789,7 +789,7 @@ into a transformer for optional values of that type.
 ###Arrays
 Lets dig deeper  and go for a non-primitive json types, for example array:
 We want to transform a List with As - `List<A>` to a json array. Its just as with option, of we can encode
-A, we can encode a List og As.
+A, we can encode a List of As.
 
 ```
   public static <A> JsonEncoder<List<A>> arrayEncoder(JsonEncoder<A> aEncoder) {
