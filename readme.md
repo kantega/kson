@@ -677,8 +677,8 @@ concern itself with state, we can forget about that all together: We can work co
 
 
 ###Basics
-
-Now, converting between our domain objects and json can be represented by two functions: An encoder wich converts to json, 
+To build a codec we need to main parts: something that encodes our model, and something
+that decodes it. So lets start by splitting our problem into two functions: An encoder wich converts to json, 
 and a decoder wich converts from json. These two functions can be represented as functional interfaces.
 
 The decoder can look like this
@@ -719,7 +719,7 @@ We extend ```F``` for two reasons: It makes it clear we think of the constructs 
 gives us the benefits of using the functionaljava library, wich has a lot of functionality around functions.
 
 Now we have defined our encoder and decoder functions, but we have no implementations of them yet. Lets change that
-by implemementing the simplest possible encoder: An encoder for strings:
+by implementing the simplest possible encoder, an encoder for strings:
 
 ```java
 public class JsonEncoders {
