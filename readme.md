@@ -438,9 +438,9 @@ Which is what we could expect: The "leader" field has been replaced and
 the zipcode of the users in the list has been updated.
 
 ##Converting to your domainmodel using the typesafest (and simplest actually) way.
-Nothing is simpler than the automatic conversion done by jackson you say? Then i am convinced that your 
-application is either stringly typed or infected with annotion hell. Or you use stringly typed DTOs to provide
-for the mapping. Adding a converter for you Money and Measurements librarires is also trivial i presume?
+You say that nothing is simpler than the automatic conversion done by jackson? Then i am convinced that your 
+application is either stringly typed or infected with annotation hell. Or you use stringly typed DTOs to provide
+for the mapping to and from your domain model. Adding a converter for you Money and Measurements librarires is also trivial i presume?
  
 Lets see how simple this can be with kson. We start by defining our domain model that represents the Lenses usecase above.
 ```java
