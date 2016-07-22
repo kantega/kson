@@ -652,9 +652,9 @@ By writing this library we wanted to demonstrate how easy it is to build a solid
 regarding all aspects except runtime speed - by using only a limited set of buildingblocks.
 Now, the term " easy" is of course a bit misleadin. Its easy for us, but if you are not used
 to functions, then it might take some time to get used to. But if you take your time
-a new world will reveal itself before your eyes. I guarantee it! <sup>1</sup>) 
+a new world will reveal itself before your eyes. I guarantee it! <sup>1</sup> 
 
-<sup>1) Not a guarantee</sup>
+<sup>1 Not a guarantee</sup>
 
 This library is built up by four distinct parts. Used by the others, and core to the library are the _data-objects_ 
 (org.kantega.kson.json) that represent
