@@ -483,13 +483,13 @@ public class CodecExample {
     }
   }
 
-
   public static void main(String[] args) {
 
     
     
     
   }
+}
 ```
 
 
@@ -502,8 +502,13 @@ Note that the _objectCodec_ functions always takes in functions as the last two 
 all the fields from your domain object. The last one is a _constructor_. When you map one to one, you can just pass inn a reference to you objects constructor directly
 like in the example.
 
+Lets make codecs for our domain model, and save them as fields in out class.
+
 ```java
 public class CodecExample {
+
+  //**** Domain model ****
+
   public static class Address {
     final String street;
     final String zip;
@@ -512,8 +517,6 @@ public class CodecExample {
       this.street = street;
       this.zip = zip;
     }
-
-
   }
 
   static class User {
@@ -524,8 +527,6 @@ public class CodecExample {
       this.name = name;
       this.address = address;
     }
-
-
   }
 
   static class UserModel {
@@ -536,8 +537,6 @@ public class CodecExample {
       this.leader = leader;
       this.users = users;
     }
-
-
   }
 
   static class TopLevel {
@@ -548,6 +547,8 @@ public class CodecExample {
     }
   }
 
+  
+  //**** Equal instances for verifying that out roundtrip is correct **** 
 
   final static Equal<EncodeExample.Address> addrEq =
       p2Equal(stringEqual, stringEqual).contramap(address -> p(address.street, address.zip));
@@ -561,39 +562,45 @@ public class CodecExample {
   final static Equal<EncodeExample.TopLevel> tlEq =
       umEq.contramap(tl -> tl.model);
 
+  //**** Codecs ****
+
+  final static JsonCodec<EncodeExample.Address> addressCodec =
+      objectCodec(
+          field("street", stringCodec),
+          field("zip", stringCodec),
+          addr -> p(addr.street, addr.zip),
+          EncodeExample.Address::new
+      );
+
+  final static JsonCodec<EncodeExample.User> userCodec =
+      objectCodec(
+          field("name", stringCodec),
+          field("address", addressCodec),
+          user -> p(user.name, user.address),
+          EncodeExample.User::new
+      );
+
+  final static JsonCodec<EncodeExample.UserModel> userModelCodec =
+      objectCodec(
+          field("leader", userCodec),
+          field("users", arrayCodec(userCodec)),
+          um -> p(um.leader, um.users),
+          EncodeExample.UserModel::new
+      );
+
+  final static JsonCodec<EncodeExample.TopLevel> topLevelJsonCodec =
+      objectCodec(
+          field("model", userModelCodec),
+          tl -> tl.model,
+          EncodeExample.TopLevel::new
+      );
+
+
+  //**** Running the example ****
+  
   public static void main(String[] args) {
 
-    JsonCodec<EncodeExample.Address> addressCodec =
-        objectCodec(
-            field("street", stringCodec),
-            field("zip", stringCodec),
-            addr -> p(addr.street, addr.zip),
-            EncodeExample.Address::new
-        );
-
-    JsonCodec<EncodeExample.User> userCodec =
-        objectCodec(
-            field("name", stringCodec),
-            field("address", addressCodec),
-            user -> p(user.name, user.address),
-            EncodeExample.User::new
-        );
-
-    JsonCodec<EncodeExample.UserModel> userModelCodec =
-        objectCodec(
-            field("leader", userCodec),
-            field("users", arrayCodec(userCodec)),
-            um -> p(um.leader, um.users),
-            EncodeExample.UserModel::new
-        );
-
-    JsonCodec<EncodeExample.TopLevel> topLevelJsonCodec =
-        objectCodec(
-            field("model", userModelCodec),
-            tl -> tl.model,
-            EncodeExample.TopLevel::new
-        );
-
+    //Create an instance of the domain model
 
     EncodeExample.TopLevel tl =
         new EncodeExample.TopLevel(
@@ -605,15 +612,17 @@ public class CodecExample {
             )
         );
 
+    //Convert
+    
     JsonValue json =
         topLevelJsonCodec.encode(tl);
 
     JsonResult<EncodeExample.TopLevel> readResult =
         topLevelJsonCodec.decode(json);
 
-    String output = 
+    String output =
         readResult.fold(err -> "Oh no:" + err, read -> "tl equals readTl  = " + tlEq.eq(tl, read));
-    
+
     System.out.print(output);
 
   }
@@ -621,6 +630,10 @@ public class CodecExample {
 ```
 
 This outputs `tl equals readTl  = true`.
+
+Note that the codecs are values. They can be passed safely around in your program, as they are immutable. You can store 
+them as static instances in your classes for reuse, and combine them how you like. (Becase they are immutable)
+Did i mention everything is immutable? Nothing unexpected will happen here. Ever. We promise.
 
 ##Behind the scenes
 _or how to build an excellent library by combining many little parts_

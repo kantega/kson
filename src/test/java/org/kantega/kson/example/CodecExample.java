@@ -5,7 +5,6 @@ import fj.data.List;
 import org.kantega.kson.JsonResult;
 import org.kantega.kson.codec.JsonCodec;
 import org.kantega.kson.json.JsonValue;
-import org.kantega.kson.parser.JsonWriter;
 
 import static fj.Equal.p2Equal;
 import static fj.Equal.stringEqual;
@@ -13,6 +12,9 @@ import static fj.P.p;
 import static org.kantega.kson.codec.JsonCodecs.*;
 
 public class CodecExample {
+
+  //**** Domain model ****
+
   public static class Address {
     final String street;
     final String zip;
@@ -21,8 +23,6 @@ public class CodecExample {
       this.street = street;
       this.zip = zip;
     }
-
-
   }
 
   static class User {
@@ -33,8 +33,6 @@ public class CodecExample {
       this.name = name;
       this.address = address;
     }
-
-
   }
 
   static class UserModel {
@@ -45,8 +43,6 @@ public class CodecExample {
       this.leader = leader;
       this.users = users;
     }
-
-
   }
 
   static class TopLevel {
@@ -57,6 +53,8 @@ public class CodecExample {
     }
   }
 
+
+  //**** Equal instances for verifying that out roundtrip is correct ****
 
   final static Equal<EncodeExample.Address> addrEq =
       p2Equal(stringEqual, stringEqual).contramap(address -> p(address.street, address.zip));
@@ -70,39 +68,45 @@ public class CodecExample {
   final static Equal<EncodeExample.TopLevel> tlEq =
       umEq.contramap(tl -> tl.model);
 
+  //**** Codecs ****
+
+  final static JsonCodec<EncodeExample.Address> addressCodec =
+      objectCodec(
+          field("street", stringCodec),
+          field("zip", stringCodec),
+          addr -> p(addr.street, addr.zip),
+          EncodeExample.Address::new
+      );
+
+  final static JsonCodec<EncodeExample.User> userCodec =
+      objectCodec(
+          field("name", stringCodec),
+          field("address", addressCodec),
+          user -> p(user.name, user.address),
+          EncodeExample.User::new
+      );
+
+  final static JsonCodec<EncodeExample.UserModel> userModelCodec =
+      objectCodec(
+          field("leader", userCodec),
+          field("users", arrayCodec(userCodec)),
+          um -> p(um.leader, um.users),
+          EncodeExample.UserModel::new
+      );
+
+  final static JsonCodec<EncodeExample.TopLevel> topLevelJsonCodec =
+      objectCodec(
+          field("model", userModelCodec),
+          tl -> tl.model,
+          EncodeExample.TopLevel::new
+      );
+
+
+  //**** Running the example ****
+
   public static void main(String[] args) {
 
-    JsonCodec<EncodeExample.Address> addressCodec =
-        objectCodec(
-            field("street", stringCodec),
-            field("zip", stringCodec),
-            addr -> p(addr.street, addr.zip),
-            EncodeExample.Address::new
-        );
-
-    JsonCodec<EncodeExample.User> userCodec =
-        objectCodec(
-            field("name", stringCodec),
-            field("address", addressCodec),
-            user -> p(user.name, user.address),
-            EncodeExample.User::new
-        );
-
-    JsonCodec<EncodeExample.UserModel> userModelCodec =
-        objectCodec(
-            field("leader", userCodec),
-            field("users", arrayCodec(userCodec)),
-            um -> p(um.leader, um.users),
-            EncodeExample.UserModel::new
-        );
-
-    JsonCodec<EncodeExample.TopLevel> topLevelJsonCodec =
-        objectCodec(
-            field("model", userModelCodec),
-            tl -> tl.model,
-            EncodeExample.TopLevel::new
-        );
-
+    //Create an instance of the domain model
 
     EncodeExample.TopLevel tl =
         new EncodeExample.TopLevel(
@@ -113,6 +117,8 @@ public class CodecExample {
                     new EncodeExample.User("Jens Normann", new EncodeExample.Address("ghbstreet", "4444")))
             )
         );
+
+    //Convert
 
     JsonValue json =
         topLevelJsonCodec.encode(tl);
