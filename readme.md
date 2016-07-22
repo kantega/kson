@@ -915,7 +915,7 @@ That is a mouthful of type information, but we only have to write it once, and i
 and try to find a more elegant way to encode json objects, probably not since it works and is already written.
 
 But that tupletizing really draws a lot of attention when reading the code (kinda the same effect as a lavalamp). We factor 
-that part out into a utility function _expand_ that converts a tuple into pairs (a,b,c,d,e,f,g) -> (a,(b,(c,(e,(f,g)))))` for us.
+that part out into a utility function _expand_ that converts a tuple into pairs (a,b,c,d,e,f,g) -> (a,(b,(c,(e,(f,g))))) for us.
 ```
 public static <A, B, C, D, E, FF, G, H> JsonEncoder<P8<A, B, C, D, E, FF, G, H>> obj(
       FieldEncoder<A> a,
@@ -936,7 +936,7 @@ Not too shabby.
 
 
 
-Lets see what this will look like when we use out encoder in in an example.
+Lets see what this will look like when we use our encoder in in an example.
 We want to create an encoder for our `User` objects. The observant reader however will have noticed by now that the field _age_
 in the User class is of type _int_, but we don't have an encoder for ints. We address that first by _contramap_ing the 
 bigDecimalDecoder
