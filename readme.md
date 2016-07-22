@@ -981,7 +981,7 @@ public class EncodeExample {
 You can see that we also use _contramap_ to convert from our `User` to a tuple3 (`P3`). It looks ugly though, and we dont
 want to write _contramap_ all over our code, so lets embed that into our dsl. 
 
-Our highest arity converter for objects looks like this
+Our highest arity converter for objects now looks like this
 ```
  public static <A, B, C, D, E, FF, G, H,X> JsonEncoder<X> obj(
       FieldEncoder<A> a,
