@@ -915,7 +915,7 @@ That is a mouthful of type information, but we only have to write it once, and i
 and try to find a more elegant way to encode json objects, probably not since it works and is already written.
 
 But that tupletizing really draws a lot of attention when reading the code (kinda the same effect as a lavalamp). We factor 
-that part out into a utility function _expand_ that converts a tuple into pairs ´(a,b,c,d,e,f,g) -> (a,(b,(c,(e,(f,g)))))´ for us.
+that part out into a utility function _expand_ that converts a tuple into pairs (a,b,c,d,e,f,g) -> (a,(b,(c,(e,(f,g)))))` for us.
 ```
 public static <A, B, C, D, E, FF, G, H> JsonEncoder<P8<A, B, C, D, E, FF, G, H>> obj(
       FieldEncoder<A> a,
