@@ -5,10 +5,11 @@ import fj.data.List;
 import fj.data.Option;
 import org.kantega.kson.json.JsonObject;
 import org.kantega.kson.json.JsonValues;
+import org.kantega.kson.util.Products;
 
 import java.math.BigDecimal;
 
-import static fj.P.p;
+import static org.kantega.kson.util.Products.*;
 
 public class JsonEncoders {
 
@@ -65,7 +66,7 @@ public class JsonEncoders {
       FieldEncoder<B> b,
       FieldEncoder<C> c) {
     return t ->
-        and(a, and(b, c)).apply(JsonObject.empty, p(t._1(), p(t._2(), t._3())));
+        and(a, and(b, c)).apply(JsonObject.empty, expand(t));
   }
 
   public static <A, B, C, X> JsonEncoder<X> obj(
@@ -84,7 +85,7 @@ public class JsonEncoders {
       FieldEncoder<D> d) {
     return t ->
         and(a, and(b, and(c, d)))
-            .apply(JsonObject.empty, p(t._1(), p(t._2(), p(t._3(), t._4()))));
+            .apply(JsonObject.empty, expand(t));
   }
 
   public static <A, B, C, D, X> JsonEncoder<X> obj(
@@ -104,7 +105,7 @@ public class JsonEncoders {
       FieldEncoder<E> e) {
     return t ->
         and(a, and(b, and(c, and(d, e))))
-            .apply(JsonObject.empty, p(t._1(), p(t._2(), p(t._3(), p(t._4(), t._5())))));
+            .apply(JsonObject.empty, expand(t));
   }
 
   public static <A, B, C, D, E, X> JsonEncoder<X> obj(
@@ -127,7 +128,7 @@ public class JsonEncoders {
       FieldEncoder<FF> f) {
     return t ->
         and(a, and(b, and(c, and(d, and(e, f)))))
-            .apply(JsonObject.empty, p(t._1(), p(t._2(), p(t._3(), p(t._4(), p(t._5(), t._6()))))));
+            .apply(JsonObject.empty, expand(t));
   }
 
   public static <A, B, C, D, E, FF, X> JsonEncoder<X> obj(
@@ -151,7 +152,7 @@ public class JsonEncoders {
       FieldEncoder<G> g) {
     return t ->
         and(a, and(b, and(c, and(d, and(e, and(f, g))))))
-            .apply(JsonObject.empty, p(t._1(), p(t._2(), p(t._3(), p(t._4(), p(t._5(), p(t._6(), t._7())))))));
+            .apply(JsonObject.empty, expand(t));
   }
 
   public static <A, B, C, D, E, FF, G, X> JsonEncoder<X> obj(
@@ -177,7 +178,7 @@ public class JsonEncoders {
       FieldEncoder<H> h) {
     return t ->
         and(a, and(b, and(c, and(d, and(e, and(f, and(g, h)))))))
-            .apply(JsonObject.empty, p(t._1(), p(t._2(), p(t._3(), p(t._4(), p(t._5(), p(t._6(), p(t._7(), t._8()))))))));
+            .apply(JsonObject.empty, expand(t));
   }
 
   public static <A, B, C, D, E, FF, G, H,X> JsonEncoder<X> obj(
@@ -194,17 +195,10 @@ public class JsonEncoders {
   }
 
   public interface FieldEncoder<A> {
-
     JsonObject apply(JsonObject obj, A a);
-
-    default <B> FieldEncoder<B> contramap(F<B, A> f) {
-      return (obj, b) -> apply(obj, f.f(b));
-    }
-
   }
 
-
-  static <A, B> FieldEncoder<P2<A, B>> and(FieldEncoder<A> fa, FieldEncoder<B> fb) {
+  private static <A, B> FieldEncoder<P2<A, B>> and(FieldEncoder<A> fa, FieldEncoder<B> fb) {
     return (obj, t) -> fb.apply(fa.apply(obj, t._1()), t._2());
   }
 

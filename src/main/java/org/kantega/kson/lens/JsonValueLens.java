@@ -43,7 +43,7 @@ public class JsonValueLens extends JsonLens<JsonValue, JsonValue> {
   public JsonLens<JsonValue, String> asString() {
     return
         xmap(
-            a -> a.onString(JsonResult::success).orElse(fail("Not a string")),
+            JsonValue::asText,
             str -> success(new JsonString(str))
         );
   }
@@ -51,7 +51,7 @@ public class JsonValueLens extends JsonLens<JsonValue, JsonValue> {
   public JsonLens<JsonValue, BigDecimal> asNumber() {
     return
         xmap(
-            a -> a.onNumber(JsonResult::success).orElse(fail("Not a number")),
+            JsonValue::asNumber,
             n -> success(new JsonNumber(n))
         );
   }
@@ -59,7 +59,7 @@ public class JsonValueLens extends JsonLens<JsonValue, JsonValue> {
   public JsonLens<JsonValue, Boolean> asBool() {
     return
         xmap(
-            a -> a.onBool(JsonResult::success).orElse(fail("Not a number")),
+            JsonValue::asBool,
             n -> success(new JsonBool(n))
         );
   }

@@ -6,12 +6,13 @@ import fj.F0;
 import fj.data.List;
 import fj.data.Option;
 import fj.data.TreeMap;
+import org.kantega.kson.JsonResult;
 
 import java.math.BigDecimal;
 
 import static fj.data.List.nil;
 import static fj.data.Option.none;
-import static org.kantega.kson.json.JsonValue.Fold.*;
+import static org.kantega.kson.JsonResult.fail;
 
 public abstract class JsonValue {
 
@@ -28,36 +29,48 @@ public abstract class JsonValue {
     );
   }
 
-  public Option<String> asText(){
+  public Option<String> asTextO() {
     return onString(Option::some).orElse(none());
   }
 
-  public Option<BigDecimal> asNumber(){
+  public JsonResult<String> asText() {
+    return onString(JsonResult::success).orElse(fail("Not a string"));
+  }
+
+  public Option<BigDecimal> asNumberO() {
     return onNumber(Option::some).orElse(none());
   }
 
-  public Option<Boolean> asBool(){
+  public JsonResult<BigDecimal> asNumber() {
+    return onNumber(JsonResult::success).orElse(fail("Not a number"));
+  }
+
+  public Option<Boolean> asBoolO() {
     return onBool(Option::some).orElse(none());
   }
 
-  public Option<JsonValue> getField(String field){
-    return onObject(m->m.get(field)).orElse(none());
+  public JsonResult<Boolean> asBool() {
+    return onBool(JsonResult::success).orElse(fail("Not a bool"));
   }
 
-  public Option<JsonValue> setField(String name, JsonValue value){
-    return onObject(map->Option.some(JsonValues.jObj(map.set(name,value)))).orElse(none());
+  public Option<JsonValue> getField(String field) {
+    return onObject(m -> m.get(field)).orElse(none());
   }
 
-  public Option<String> getFieldAsText(String field){
-    return getField(field).bind(JsonValue::asText);
+  public Option<JsonValue> setField(String name, JsonValue value) {
+    return onObject(map -> Option.some(JsonValues.jObj(map.set(name, value)))).orElse(none());
   }
 
-  public Option<BigDecimal> getFieldAsNumber(String field){
-    return getField(field).bind(JsonValue::asNumber);
+  public Option<String> getFieldAsText(String field) {
+    return getField(field).bind(JsonValue::asTextO);
   }
 
-  public Option<Boolean> getFieldAsBool(String field){
-    return getField(field).bind(JsonValue::asBool);
+  public Option<BigDecimal> getFieldAsNumber(String field) {
+    return getField(field).bind(JsonValue::asNumberO);
+  }
+
+  public Option<Boolean> getFieldAsBool(String field) {
+    return getField(field).bind(JsonValue::asBoolO);
   }
 
   public <T> Fold<T> onString(F<String, T> f) {
