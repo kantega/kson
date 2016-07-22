@@ -779,8 +779,7 @@ that:
   }
 ```
 
-maybeValue.option is the _fold_ of the Option type, meaning it handles both states, and transforms
-the value completely to an object of another type without the possibility to go back. The first argument
+_maybeValue.option_ is the _fold_ of the Option type. The first argument
 is used in case the Option is empty (None), and the second argument is a function that transforms the 
 contained value to an object of the target type.
 
