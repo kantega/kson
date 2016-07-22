@@ -25,6 +25,10 @@ public class JsonResult<A> {
     return new JsonResult<>(Validation.success(a));
   }
 
+  public static <A> JsonResult<A> fromValidation(Validation<String, A> validation){
+    return new JsonResult<>(validation);
+  }
+
   public static <A> JsonResult<List<A>> sequence(List<JsonResult<A>> results) {
     return results.foldLeft(
         (memo, result) -> result.bind(a -> memo.map(list -> list.cons(a))),

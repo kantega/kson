@@ -99,12 +99,12 @@ public class ParseExample {
         JsonWriter.writePretty(json);
     
     
-    final Validation<String,JsonValue> parsedJsonV =
+    final JsonResult<JsonValue> parsedJsonV =
         JsonParser.parse(jsonString);
   }
 }
 ```
-Observe that the parser yields a ```Validation<String,JsonValue>```. Of you are unfamiliar with the validation type you 
+Observe that the parser yields a `JsonResult<JsonValue>`. A JsonResult is actyally just a wrapper around ```Validation<String,JsonValue>```. Of you are unfamiliar with the validation type you 
 can google it, there are plenty of articles 
  that introduce the concept. Basically a Validation holds either a failure value (A ```String``` explaining what went 
  wrong in this case) 
@@ -133,7 +133,7 @@ Lets make a program that prints the name and age contained in the jsonstructure.
 public class ParseExample {
   public static void main(String[] args) {
 
-    final JsonObject json =
+    final JsonValue json =
         jObj(
             field("name", jString("Ola Nordmann")),
             field("age", jNum(28)),
@@ -143,25 +143,23 @@ public class ParseExample {
     final String jsonString =
         JsonWriter.writePretty(json);
 
-
-    final Validation<String, JsonValue> parsedJsonV =
+    final JsonResult<JsonValue> parsedJsonV =
         JsonParser.parse(jsonString);
 
-    final F<JsonValue, Validation<String,String>> getNameAndAge =
+    final F<JsonValue, JsonResult<P2<String,BigDecimal>>> getNameAndAge =
         obj ->
-            getFieldAsText(obj,"name").bind(name->getFieldAsText(obj,"age").map(age->name+", "+age)).toValidation("Oh noh!");
-    
-    final String output = 
-           parsedJsonV.validation(
-               failmsg->failmsg,
-               parsedJson->getNameAndAge.f(parsedJson).validation(failmsg2->failmsg2,nameAndAge->nameAndAge));
- 
+            obj.getFieldAsText("name").bind(name -> obj.getFieldAsText("age").map(age -> P.p(name, age))).option(JsonResult.fail("'name' or 'age' is missing"), JsonResult::success);
+
+    final String output =
+        parsedJsonV.fold(
+            failmsg -> failmsg,
+            parsedJson -> getNameAndAge.f(parsedJson).fold(failmsg2 -> failmsg2, nameAndAge -> nameAndAge._1()+","+nameAndAge._2()));
+
     System.out.println(output);
+
   }
 }
 ```
-
-
 Our name and age extraction consists of two interesting parts:
 First we have a function (the object of type ```F```) that accepts a JsonValue and yields a Validation with a string 
 explaining the failure as the fail value, 
@@ -196,7 +194,7 @@ Lets correct the bug and try again:
 public class ParseExample {
   public static void main(String[] args) {
 
-    final JsonObject json =
+    final JsonValue json =
         jObj(
             field("name", jString("Ola Nordmann")),
             field("age", jNum(28)),
@@ -206,20 +204,20 @@ public class ParseExample {
     final String jsonString =
         JsonWriter.writePretty(json);
 
-
-    final Validation<String, JsonValue> parsedJsonV =
+    final JsonResult<JsonValue> parsedJsonV =
         JsonParser.parse(jsonString);
 
-    final F<JsonValue, Validation<String,String>> getNameAndAge =
+    final F<JsonValue, JsonResult<P2<String,BigDecimal>>> getNameAndAge =
         obj ->
-            getFieldAsText(obj,"name").bind(name->getFieldAsText(obj,"age").map(age->name+", "+age)).toValidation("'name' or 'age' is missing");
-    
-    final String output = 
-           parsedJsonV.validation(
-               failmsg->failmsg,
-               parsedJson->getNameAndAge.f(parsedJson).validation(failmsg2->failmsg2,nameAndAge->nameAndAge));
- 
+            obj.getFieldAsText("name").bind(name -> obj.getFieldAsNumber("age").map(age -> P.p(name, age))).option(JsonResult.fail("'name' or 'age' is missing"), JsonResult::success);
+
+    final String output =
+        parsedJsonV.fold(
+            failmsg -> failmsg,
+            parsedJson -> getNameAndAge.f(parsedJson).fold(failmsg2 -> failmsg2, nameAndAge -> nameAndAge._1()+","+nameAndAge._2()));
+
     System.out.println(output);
+
   }
 }
 ```
@@ -339,7 +337,7 @@ public class LensExample {
 ```
 Not too shabby, considering this is safe. But why bother with lenses? We could just as well write
 ` userjson.getField("address").bind(f->f.getFieldAsText("zip")).getOrElse("No zipcode in object)`.
-There are three advantages of using zippers over getters:
+There are three advantages of using lenses over getters/setters:
  * They are values, you can use them like any other value, pass them as arguments and so forth.
  * They compose, so you can mix them as you like
  * They can update inner values in an immutable fashion

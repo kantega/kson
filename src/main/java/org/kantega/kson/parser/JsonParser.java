@@ -7,6 +7,7 @@ import fj.data.Stream;
 import fj.data.Validation;
 import fj.parser.Parser;
 import fj.parser.Result;
+import org.kantega.kson.JsonResult;
 import org.kantega.kson.json.*;
 
 import java.math.BigDecimal;
@@ -213,11 +214,11 @@ public class JsonParser {
    * @param json the stream
    * @return the Success(JsonValue) or Fail(String)
    */
-  public static Validation<String, JsonValue> parse(Stream<Character> json) {
-    return value().parse(json).f().map(ParseFailure::getMessage).map(Result::value);
+  public static JsonResult<JsonValue> parse(Stream<Character> json) {
+    return JsonResult.fromValidation(value().parse(json).f().map(ParseFailure::getMessage).map(Result::value));
   }
 
-  public static Validation<String, JsonValue> parse(String json) {
+  public static JsonResult<JsonValue> parse(String json) {
     return parse(Stream.fromString(json));
   }
 
