@@ -891,7 +891,7 @@ and change the `P3` encoder
 
 
 A little nicer. Observe that only typed information changes between the calls to the FieldEncoder. The compiler will
-tell us if we miss out mark. But we need to be able to convert objects with fieldcount ≠ 3, so we will
+tell us if we miss our mark. But we need to be able to convert objects with fieldcount ≠ 3, so we will
 have to manually craft conversions from P2 up to P8 (the highets tuple in fj).
 
 The function of arity 8 looks like this:
