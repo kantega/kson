@@ -275,8 +275,8 @@ use the wrong conversion. Later we will use
  the compiler even more by using converters.
 
 
-##More on using JsonValue, for when you know little or nothing about its structure
-A JsonValue has a very limited set of operations you can perform on it. This is because you do not know exactly what type 
+##Lenses, for when you know little about the json structure, or you want to manipulate it directly
+A common supertype JsonValue has a very limited set of operations you can perform on it. This is because you do not know exactly what type 
 of value it is. 
 It represents the different kind of values a json structure can contain (boolean, number, string, array,object and null) 
 as subtypes of JsonValue.
@@ -284,10 +284,11 @@ In kson we have opted for the visitor pattern to extract the content of the a js
 type to fold a JsonValue into 
 the desired type by calling ```JsonValue.fold(JsonValue.Fold)```.  Most java based json libraries use the unsafe _is***_ 
 idiom in conjunction with a jungle of ifs
-and elses. We felt that folding was the most compact and safe way to deconstruct a json tree.
+and elses. We felt that folding was the most compact and safe way to deconstruct a json tree. But we also provided a good deal of utiltities 
+to convert json into common java types. (They ar e a good entry point to examine if you want to know more about how we fold over a JsonValue)
 
 The downside with folding the datastructure directly is that json is a nested structure, and
-we would like to easily get to the deepnodes without manually having to handle all possibilities
+we would like to easily get to the deeper nodes without manually having to handle all possibilities
 along the way. That is what _Lenses_ are for! A Lens is an object that knows how to extract a value
 from an object, and to set a value in an object - in a immutable manner. Think of it as a setter
 and getter pair, but not attached to the object it sets and gets from. This gives us the advantage 
@@ -337,7 +338,7 @@ public class LensExample {
 }
 ```
 Not too shabby, considering this is safe. But why bother with lenses? We could just as well write
-``` userjson.getField("address").bind(f->f.getFieldAsText("zip")).getOrElse("No zipcode in object)```.
+` userjson.getField("address").bind(f->f.getFieldAsText("zip")).getOrElse("No zipcode in object)`.
 There are three advantages of using zippers over getters:
  * They are values, you can use them like any other value, pass them as arguments and so forth.
  * They compose, so you can mix them as you like
@@ -443,15 +444,188 @@ Nothing is simpler than the automatic conversion done by jackson you say? Then i
 application is either stringly typed or infected with annotion hell. Or you use stringly typed DTOs to provide
 for the mapping. Adding a converter for you Money and Measurements librarires is also trivial i presume?
  
- Lets see how simple this can be with kson. We start by importing the dsl on the ```JsonCodecs``` class.
+Lets see how simple this can be with kson. We start by defining our domain model that represents the Lenses usecase above.
+```java
+public class CodecExample {
+  public static class Address {
+    final String street;
+    final String zip;
+
+    public Address(String street, String zip) {
+      this.street = street;
+      this.zip = zip;
+    }
+  }
+
+  static class User {
+    final String                name;
+    final EncodeExample.Address address;
+
+    User(String name, EncodeExample.Address address) {
+      this.name = name;
+      this.address = address;
+    }
+  }
+
+  static class UserModel {
+    final EncodeExample.User       leader;
+    final List<EncodeExample.User> users;
+
+    UserModel(EncodeExample.User leader, List<EncodeExample.User> users) {
+      this.leader = leader;
+      this.users = users;
+    }
+  }
+
+  static class TopLevel {
+    final EncodeExample.UserModel model;
+
+    TopLevel(EncodeExample.UserModel model) {
+      this.model = model;
+    }
+  }
 
 
+  public static void main(String[] args) {
 
-...
+    
+    
+    
+  }
+```
 
+
+The we write our codecs using the dsl defined in `JsonCodecs`. We use the _objectCodec_ method in concunction with _field_methods to define our
+conversion. It is pretty self explanatory. 
+
+The `Equal` instances are used for comparison. They are a typesafe version of `equal()`, and quicker to write too.
+
+Note that the _objectCodec_ always taken inn two functions as the last two arguments. The first function is a _deconstructor_, it tells the converter how to extract
+all the fields from your domain object. The last one is a _constructor_. When you map one to one, you can just pass inn a reference to you objects constructor directly
+like in the example.
+
+```java
+public class CodecExample {
+  public static class Address {
+    final String street;
+    final String zip;
+
+    public Address(String street, String zip) {
+      this.street = street;
+      this.zip = zip;
+    }
+
+
+  }
+
+  static class User {
+    final String                name;
+    final EncodeExample.Address address;
+
+    User(String name, EncodeExample.Address address) {
+      this.name = name;
+      this.address = address;
+    }
+
+
+  }
+
+  static class UserModel {
+    final EncodeExample.User       leader;
+    final List<EncodeExample.User> users;
+
+    UserModel(EncodeExample.User leader, List<EncodeExample.User> users) {
+      this.leader = leader;
+      this.users = users;
+    }
+
+
+  }
+
+  static class TopLevel {
+    final EncodeExample.UserModel model;
+
+    TopLevel(EncodeExample.UserModel model) {
+      this.model = model;
+    }
+  }
+
+
+  final static Equal<EncodeExample.Address> addrEq =
+      p2Equal(stringEqual, stringEqual).contramap(address -> p(address.street, address.zip));
+
+  final static Equal<EncodeExample.User> userEq =
+      p2Equal(stringEqual, addrEq).contramap(user -> p(user.name, user.address));
+
+  final static Equal<EncodeExample.UserModel> umEq =
+      p2Equal(userEq, Equal.listEqual(userEq)).contramap(um -> p(um.leader, um.users));
+
+  final static Equal<EncodeExample.TopLevel> tlEq =
+      umEq.contramap(tl -> tl.model);
+
+  public static void main(String[] args) {
+
+    JsonCodec<EncodeExample.Address> addressCodec =
+        objectCodec(
+            field("street", stringCodec),
+            field("zip", stringCodec),
+            addr -> p(addr.street, addr.zip),
+            EncodeExample.Address::new
+        );
+
+    JsonCodec<EncodeExample.User> userCodec =
+        objectCodec(
+            field("name", stringCodec),
+            field("address", addressCodec),
+            user -> p(user.name, user.address),
+            EncodeExample.User::new
+        );
+
+    JsonCodec<EncodeExample.UserModel> userModelCodec =
+        objectCodec(
+            field("leader", userCodec),
+            field("users", arrayCodec(userCodec)),
+            um -> p(um.leader, um.users),
+            EncodeExample.UserModel::new
+        );
+
+    JsonCodec<EncodeExample.TopLevel> topLevelJsonCodec =
+        objectCodec(
+            field("model", userModelCodec),
+            tl -> tl.model,
+            EncodeExample.TopLevel::new
+        );
+
+
+    EncodeExample.TopLevel tl =
+        new EncodeExample.TopLevel(
+            new EncodeExample.UserModel(
+                new EncodeExample.User("Ola Normann", new EncodeExample.Address("abcstreet", "1234")),
+                List.list(
+                    new EncodeExample.User("Kari Normann", new EncodeExample.Address("defstreet", "4321")),
+                    new EncodeExample.User("Jens Normann", new EncodeExample.Address("ghbstreet", "4444")))
+            )
+        );
+
+    JsonValue json =
+        topLevelJsonCodec.encode(tl);
+
+    JsonResult<EncodeExample.TopLevel> readResult =
+        topLevelJsonCodec.decode(json);
+
+    String output = 
+        readResult.fold(err -> "Oh no:" + err, read -> "tl equals readTl  = " + tlEq.eq(tl, read));
+    
+    System.out.print(output);
+
+  }
+}
+```
+
+This outputs `tl equals readTl  = true`.
 
 ##Behind the scenes
-###or how to build an excellent library by combining small parts
+_or how to build an excellent library by combining many little parts_
 Building this library was actually an excercise in teaching functional progarmming. If it served its purpose
 awaits to be seen.
 
@@ -958,7 +1132,10 @@ map any domain object of any complexity to json using contramap. But we are only
 we need to decode to. Unfortenately that is a little bit harder, since we need to 
 handle the case when the json tree does not have the shape we need to build our domain model.
 
-The decoders are basically the inverse of the encoders.
+This concludes the behind the scenes part. We hope you learned somethign by reading it, or at least give us feedback
+about typos, errors and how to improve.
+Sincerely atle.prange@kantega.no and edvard.karlsen@kantega.no
+
 
 
 

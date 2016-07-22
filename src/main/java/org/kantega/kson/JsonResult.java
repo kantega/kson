@@ -28,7 +28,7 @@ public class JsonResult<A> {
   public static <A> JsonResult<List<A>> sequence(List<JsonResult<A>> results) {
     return results.foldLeft(
         (memo, result) -> result.bind(a -> memo.map(list -> list.cons(a))),
-        JsonResult.success(List.<A>nil()));
+        JsonResult.success(List.<A>nil())).map(List::reverse);
   }
 
   public <B> JsonResult<B> mod(F<Validation<String, A>, Validation<String, B>> f) {

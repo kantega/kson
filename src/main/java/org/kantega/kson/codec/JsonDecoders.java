@@ -18,7 +18,7 @@ public class JsonDecoders {
   public static final JsonDecoder<String> stringDecoder =
       JsonValue::asText;
 
-  public static final JsonDecoder<BigDecimal> bigDecimalEncoder =
+  public static final JsonDecoder<BigDecimal> bigDecimalDecoder =
       JsonValue::asNumber;
 
   public static final JsonDecoder<Boolean> boolDecoder =
