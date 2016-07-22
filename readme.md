@@ -493,7 +493,7 @@ public class CodecExample {
 ```
 
 
-The we write our codecs using the dsl defined in `JsonCodecs`. We use the _objectCodec_ method in concunction with _field_methods to define our
+Then we write our codecs using the dsl defined in `JsonCodecs`. We use the _objectCodec_ method in conjunction with _field_methods to define our
 conversion. It is pretty self explanatory. 
 
 The `Equal` instances are used for comparison. They are a typesafe version of `equal()`, and quicker to write too.
