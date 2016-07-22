@@ -498,7 +498,7 @@ conversion. It is pretty self explanatory.
 
 The `Equal` instances are used for comparison. They are a typesafe version of `equal()`, and quicker to write too.
 
-Note that the _objectCodec_ always taken inn two functions as the last two arguments. The first function is a _deconstructor_, it tells the converter how to extract
+Note that the _objectCodec_ functions always takes in functions as the last two arguments. The first function is a _deconstructor_, it tells the converter how to extract
 all the fields from your domain object. The last one is a _constructor_. When you map one to one, you can just pass inn a reference to you objects constructor directly
 like in the example.
 
