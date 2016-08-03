@@ -678,8 +678,8 @@ concern itself with state, we can forget about that all together: We can work co
 
 ###Basics
 To build a codec we need to main parts: something that encodes our model, and something
-that decodes it. So lets start by splitting our problem into two functions: An encoder wich converts to json, 
-and a decoder wich converts from json. These two functions can be represented as functional interfaces.
+that decodes it. So lets start by splitting our problem into two functions: An encoder which converts to json, 
+and a decoder which converts from json. These two functions can be represented as functional interfaces.
 
 The decoder can look like this
 ```java
@@ -716,7 +716,7 @@ a function from _A_ to _B_. This means that the functional method _f()_ on ```F`
 Take note that the function does not change anything in the surroundings, it has no sideeffects. That means that
  calling the function with the same argument will always yield the same results.
 We extend ```F``` for two reasons: It makes it clear we think of the constructs as functions, but it also 
-gives us the benefits of using the functionaljava library, wich has a lot of functionality around functions.
+gives us the benefits of using the functionaljava library, which has a lot of functionality around functions.
 
 Now we have defined our encoder and decoder functions, but we have no implementations of them yet. Lets change that
 by implementing the simplest possible encoder, an encoder for strings:
@@ -784,17 +784,17 @@ that:
   }
 ```
 
-_maybeValue.option_ is the _fold_ of the Option type. The first argument
+_maybeValue.option(onEmpty,onDefined)_ is the _fold_ of the Option type. The first argument
 is used in case the Option is empty (None), and the second argument is a function that transforms the 
 contained value to an object of the target type.
 
-That wasnt that hard, plus we learned about fold, and got a feel for how we can can transform an encoder for a type
+That wasn't that hard, plus we learned about fold, and got a feel for how we can can transform an encoder for a type
 into a transformer for optional values of that type.
 
 ###Arrays
 Lets dig deeper  and go for a non-primitive json types, for example array:
-We want to transform a List with As - `List<A>` to a json array. Its just as with option, of we can encode
-A, we can encode a List of As.
+We want to transform a `List` with `A` - `List<A>` to a json array. It's just as with option, if we can encode
+`A`, we can encode a `List` of `A`.
 
 ```
   public static <A> JsonEncoder<List<A>> arrayEncoder(JsonEncoder<A> aEncoder) {
@@ -804,11 +804,11 @@ A, we can encode a List of As.
 
 Now, in json, an array can interchange its the types of its element, meaning you can mix numbers, string objects etc.
 In a typed language (like java), that sort of structure is called an HList (for Heterogenous List). You basically
-have to provide a converter for all the elements wich makes it a bit more complicated. Lets save that for later.
+have to provide a converter for all the elements which makes it a bit more complicated. Lets save that for later.
 
 ###Objects
-The crux of any conversion is of course nested objects. Since json usually transmits data, we only care about directed
-asyclic object-graphs.
+The crux of any conversion is of course nested objects. Since json is a tree, we only care about directed
+asyclic object-graphs. (If there is a cycle, you will get a stack overflow or an infinite loop)
 
 Again, as with arrays, it seems intuitive that if we know how to encode the contents of an object, we can encode
 the object itself. But since each field in the object can have its own type, we have to supply the
@@ -917,7 +917,7 @@ The function of arity 8 looks like this:
 ```
 
 That is a mouthful of type information, but we only have to write it once, and it is safe. Maybe we will come back later 
-and try to find a more elegant way to encode json objects, probably not since it works and is already written.
+and try to find a more elegant way to encode json objects, but probably not since it works and is already written.
 
 But that tupletizing really draws a lot of attention when reading the code (kinda the same effect as a lavalamp). We factor 
 that part out into a utility function _expand_ that converts a tuple into pairs (a,b,c,d,e,f,g) -> (a,(b,(c,(e,(f,g))))) for us.
