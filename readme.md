@@ -1,9 +1,9 @@
-# KSON - minimal JSON parsing, writing and converting
+# KSON &mdash; minimal JSON parsing, writing and converting
 
-KSON is a safe and minimal library for parsing text into json, writing json, and converting json to and from your domain types.
+KSON is a safe and minimal library for parsing text into JSON, writing JSON, and converting JSON to and from your domain types.
 
-By safe we mean no sideeffects (exceptions, mutations). All objects are immutable and threadsafe. (Also the fields of all 
-objects this library produces are immutable and threadsafe,
+By safe we mean no side effects (exceptions, mutations). All objects are immutable and thread safe. (Also the fields of all 
+objects this library produces are immutable and thread safe,
 we even encourage the use of object fields, they are all final) The API will not let you perform operations that will
 leave your objects in an undefined or undesired state. If you follow the types, it works!
 
@@ -11,18 +11,18 @@ The Kson library depends on functionaljava and functionaljava-quickcheck. The pa
 combinators from the functionaljava
 library. Read more on [functionaljava.org](https://functionaljava.org/)
 
-Beware though: This library is slow. Very slow. It uses over 100 times more time to parse a json document
-than other parsers. Does it matter to you? Probably not, as most likely your database or network is the bottneck.
-However, if you _do_ discover that indeed the json parsing is the bottlneck of your application, please
-let us know an dwe will spend some time optimizing.
+Beware though: This library is slow. Very slow. It uses over 100 times more time to parse a JSON document
+than other parsers. Does it matter to you? Probably not, as most likely your database or network is the bottleneck.
+However, if you _do_ discover that indeed the JSON parsing is the bottleneck of your application, please
+let us know an we will spend some time optimizing.
 Or use one of the unsafe libraries out there. You probably know them already.
 
 
-##Building, writing and parsing json
+## Building, writing and parsing JSON
 
-Lets begin by constructing some json values with the ```JsonValues``` class. By importing the static methods of the class, 
-you get a nice and readable dsl for constructing 
-json values:
+Let's begin by constructing some JSON values with the ```JsonValues``` class. By importing the static methods of the class, 
+you get a nice and readable DSL for constructing 
+JSON values:
 ```java
 public class ParseExample {
   public static void main(String[] args) {
@@ -37,16 +37,16 @@ public class ParseExample {
 }
 ```
 
-The example is pretty self-explanatory, but notice that you explicitly have to define the type of the json value, for example "jString". 
-We have chosen not to provide any shortcuts, and no under the hood conversion. If you would like the convenience of constructing 
-JsonString objects automatically, you can provide your own dsl. 
-(In fact, that is why we use static methods and static imports for the dsl, it makes it very easy to extend the dsl with your own combinators)
+The example is pretty self-explanatory, but notice that you explicitly have to define the type of the JSON value, for example "jString". 
+We have chosen not to provide any shortcuts, and no under-the-hood conversion. If you would like the convenience of constructing 
+JsonString objects automatically, you can provide your own DSL. 
+(In fact, that is why we use static methods and static imports for the DSL, it makes it very easy to extend the DSL with your own combinators)
 
-In order to serialize the json object you use the ```JsonWriter.write(JsonValue)``` or ```JsonWriter.writePretty(JsonValue)```. 
+In order to serialize the JSON object you use the ```JsonWriter.write(JsonValue)``` or ```JsonWriter.writePretty(JsonValue)```. 
 You probably guessed that
-writePretty outputs prettified json. (Its not actaully pretty, just indented. Writing really pretty json is impossible) 
+writePretty outputs prettified JSON. (It's not actually pretty, just indented. Writing really pretty JSON is impossible) 
 
-Lets give it a go:
+Let's give it a go:
 ```java
 public class ParseExample {
   public static void main(String[] args) {
@@ -83,7 +83,7 @@ That was easy.
 
 
 
-Now lets parse the string again:
+Now let's parse the string again:
 ```java
 public class ParseExample {
   public static void main(String[] args) {
@@ -104,7 +104,7 @@ public class ParseExample {
   }
 }
 ```
-Observe that the parser yields a `JsonResult<JsonValue>`. A JsonResult is actyally just a wrapper around ```Validation<String,JsonValue>```. Of you are unfamiliar with the validation type you 
+Observe that the parser yields a `JsonResult<JsonValue>`. A `JsonResult` is actually just a wrapper around ```Validation<String, JsonValue>```. Of you are unfamiliar with the validation type you 
 can google it, there are plenty of articles 
  that introduce the concept. Basically a Validation holds either a failure value (A ```String``` explaining what went 
  wrong in this case) 
@@ -113,22 +113,22 @@ can google it, there are plenty of articles
 
 (If you are used to functional programming, you probably want to skip to the conversion section now...)
 
-Now we have a validation with either a failure message or a JsonValue object, but which one? To make matters slightly worse, 
+Now we have a validation with either a failure message or a `JsonValue` object, but which one? To make matters slightly worse, 
 we do not even know what type
-of JsonValue we have. (Well - _we_ do - because we wrote the json string we parsed, but imagine you got that string from 
-someone else, over the internet even)
+of `JsonValue` we have. (Well, _we_ do, because we wrote the JSON string we parsed, but imagine you got that string from 
+someone else, over the internet even.)
 
-The idiomatic java solution would be to throw an exception in the failure case, and leave that for later (= never), 
+The idiomatic Java solution would be to throw an exception in the failure case, and leave that for later (= never), 
 and then maybe cast to the expected kind of
-JsonValue. But that is not safe, and this is a safe library. Plus: we are smarter than that!
+`JsonValue`. But that is not safe, and this is a safe library. Plus: we are smarter than that!
  
-When you can assume that the string you parse has a certain structure (We will cover the case where you cannot or don't 
+When you can assume that the string you parse has a certain structure (we will cover the case where you cannot or don't 
 want to use a priori 
 knowledge of the structure later on), you can construct a program that performs some operation on that structure or performs 
-some failurehandling if it does
+some failure handling if it does
  not match.
 
-Lets make a program that prints the name and age contained in the jsonstructure. 
+Let's make a program that prints the name and age contained in the JSON structure. 
 ```java
 public class ParseExample {
   public static void main(String[] args) {
@@ -165,16 +165,16 @@ First we have a function (the object of type ```F```) that accepts a JsonValue a
 explaining the failure as the fail value, 
 and the name and age concatenated
 as the success value. 
-Then we bind the function to the first validation. If the it is a fail, we just get the message. If it is a success, 
+Then we bind the function to the first validation. If the validation is a fail, we just get the message. If it is a success, 
 we apply the function to get a new validation which we fold into
-either a new failmessage or the string we are constructing.
+either a new fail message or the string we are constructing.
 
-Hm, that seemed more complicated that it could have been. But why?
+Hmm, that seemed more complicated that it could have been. But why?
 It is a consequence of constructing a safe program. When we have a result, we know that we are in a consistent state. 
 It seems annoying to handle all possible failures
 in a trivial example like this, but most programs start out as trivial. When we are forced to make qualified choices of 
 how the program is constructed 
-(including hwo to handle failure states)
+(including how to handle failure states)
 early on, we assure ourselves that the application can grow without peril.
 
 When we try it, it prints
@@ -186,9 +186,9 @@ Oh noh!
 
 Bummer!
 
-You probably spotted the bug earlier. I expected the age to be a string. If we try to convert to the wrong type we get None, 
+You probably spotted the bug earlier. I expected the age to be a string. If we try to convert to the wrong type we get `None`, 
 which we converted to a failure message.
-Lets correct the bug and try again:
+Let's correct the bug and try again:
 
 ```java
 public class ParseExample {
@@ -227,9 +227,9 @@ Ola Nordmann, 28
 
 ```
 
-Phew! But kson was supposed to be safe, what happened? Well. It _is_ safe, we did not throw any exceptions or burn 
+Phew! But Kson was supposed to be safe, what happened? Well. It _is_ safe, we did not throw any exceptions or burn 
 down any building or the likes. 
-And with a small modification we can let the compiler find bugs like this for us. Lets try again.
+And with a small modification we can let the compiler find bugs like this for us. Let's try again.
 ```java
 public class ParseExample {
   public static void main(String[] args) {
@@ -266,33 +266,33 @@ which also prints
 Ola Nordmann, 28
 
 ```
-Can you spot the difference? We have changed the extraction function to return a tuple2 of string and bigdecimal and defer 
+Can you spot the difference? We have changed the extraction function to return a `tuple2` of string and `BigDecimal` and defer 
 the construction of the string to the latest
 possible moment in our program (often called "the end of the universe"). Now the compiler will tell us if we mistakenly 
 use the wrong conversion. Later we will use
- the compiler even more by using converters.
+the compiler even more by using converters.
 
 
-##Lenses, for when you know little about the json structure, or you want to manipulate it directly
-A common supertype JsonValue has a very limited set of operations you can perform on it. This is because you do not know exactly what type 
+## Lenses, for when you know little about the JSON structure, or you want to manipulate it directly
+A common super-type `JsonValue` has a very limited set of operations you can perform on it. This is because you do not know exactly what type 
 of value it is. 
-It represents the different kind of values a json structure can contain (boolean, number, string, array,object and null) 
-as subtypes of JsonValue.
-In kson we have opted for the visitor pattern to extract the content of the a json tree. You use a ```JsonValue.Fold``` 
+It represents the different kind of values a JSON structure can contain (boolean, number, string, array, object and null) 
+as subtypes of `JsonValue`.
+In Kson we have opted for the visitor pattern to extract the content of a JSON tree. You use a ```JsonValue.Fold``` 
 type to fold a JsonValue into 
-the desired type by calling ```JsonValue.fold(JsonValue.Fold)```.  Most java based json libraries use the unsafe _is***_ 
+the desired type by calling ```JsonValue.fold(JsonValue.Fold)```.  Most Java based JSON libraries use the unsafe _is***_ 
 idiom in conjunction with a jungle of ifs
-and elses. We felt that folding was the most compact and safe way to deconstruct a json tree. But we also provided a good deal of utiltities 
-to convert json into common java types. (They ar e a good entry point to examine if you want to know more about how we fold over a JsonValue)
+and elses. We felt that folding was the most compact and safe way to de-construct a JSON tree. But we also provided a good deal of utilities 
+to convert JSON into common Java types. (They are a good entry point to examine if you want to know more about how we fold over a `JsonValue`)
 
-The downside with folding the datastructure directly is that json is a nested structure, and
+The downside with folding the data structure directly is that JSON is a nested structure, and
 we would like to easily get to the deeper nodes without manually having to handle all possibilities
 along the way. That is what _Lenses_ are for! A Lens is an object that knows how to extract a value
 from an object, and to set a value in an object - in a immutable manner. Think of it as a setter
 and getter pair, but not attached to the object it sets and gets from. This gives us the advantage 
 of combining Lenses together as we wish, and create arbitrary combinations and nested goodness
-without having the json object at hand. 
-This sounds like mumbo jumbo for most java-developers, so lets look at an example:
+without having the JSON object at hand. 
+This sounds like mumbo jumbo for most Java-developers, so let's look at an example:
 
 ```java
 public class LensExample {
@@ -342,10 +342,10 @@ There are three advantages of using lenses over getters/setters:
  * They compose, so you can mix them as you like
  * They can update inner values in an immutable fashion
  
-(We leave as an excercise for the reader to prove that these points are indeed advantages. Please make a deeply nested
+(We leave as an exercise for the reader to prove that these points are indeed advantages. Please make a deeply nested
 object and update a leaf value in a safe way)
 
-Lets try a less trivial example with an update:
+Let's try a less trivial example with an update:
 ```java
 public class LensExample {
 
@@ -435,14 +435,14 @@ The example prints:
 }
 ```
 Which is what we could expect: The "leader" field has been replaced and
-the zipcode of the users in the list has been updated.
+the zip code of the users in the list has been updated.
 
-##Converting to your domainmodel using the typesafest (and simplest actually) way.
-You say that nothing is simpler than the automatic conversion done by jackson? Then i am convinced that your 
-application is either stringly typed or infected with annotation hell. Or you use stringly typed DTOs to provide
-for the mapping to and from your domain model. Adding a converter for you Money and Measurements librarires is also trivial i presume?
+##Converting to your domain model using the safest (and simplest actually) way.
+You say that nothing is simpler than the automatic conversion done by jackson? Then I am convinced that your 
+application is either _stringly typed_ or infected with annotation hell. Or you use stringly typed DTOs to provide
+for the mapping to and from your domain model. Adding a converter for you Money and Measurements librarires is also trivial I presume?
  
-Lets see how simple this can be with kson. We start by defining our domain model that represents the Lenses usecase above.
+Let's see how simple this can be with Kson. We start by defining our domain model that represents the Lenses use case above.
 ```java
 public class CodecExample {
   public static class Address {
@@ -493,16 +493,16 @@ public class CodecExample {
 ```
 
 
-Then we write our codecs using the dsl defined in `JsonCodecs`. We use the _objectCodec_ method in conjunction with the _field_ method to define our
+Then we write our codecs using the DSL defined in `JsonCodecs`. We use the _objectCodec_ method in conjunction with the _field_ method to define our
 conversion. It is pretty self explanatory. 
 
-The `Equal` instances are used for comparison. They are a typesafe version of `equal()`, and quicker to write too.
+The `Equal` instances are used for comparison. They are a type-safe version of `equal()`, and quicker to write too.
 
 Note that the _objectCodec_ functions always takes in functions as the last two arguments. The first function is a _deconstructor_, it tells the converter how to extract
 all the fields from your domain object. The last one is a _constructor_. When you map one to one, you can just pass inn a reference to you objects constructor directly
 like in the example.
 
-Lets make codecs for our domain model, and save them as fields in out class.
+Let's make codecs for our domain model, and save them as fields in out class.
 
 ```java
 public class CodecExample {
@@ -632,54 +632,54 @@ public class CodecExample {
 This outputs `tl equals readTl  = true`.
 
 Note that the codecs are values. They can be passed safely around in your program, as they are immutable. You can store 
-them as static instances in your classes for reuse, and combine them how you like. (Becase they are immutable)
-Did i mention everything is immutable? Nothing unexpected will happen here. Ever. We promise.
+them as static instances in your classes for reuse, and combine them how you like. (Because they are immutable)
+Did I mention everything is immutable? Nothing unexpected will happen here. Ever. We promise.
 
 ##Behind the scenes
 ####or how to build an excellent library by combining many little parts
-Building this library was actually an excercise in teaching functional programming. If it served its purpose
+Building this library was actually an exercise in teaching functional programming. If it served its purpose
 awaits to be seen.
 
 Our main fascination for functional programming arose when we discovered that functionally written programs
-have certain advantages over idiomatic java (commonly referred to as "objectoriented programming"):
+have certain advantages over idiomatic Java (commonly referred to as "object oriented programming"):
 
  * The programs became smaller - less code to write and maintain
  * The programs became safer - fever exceptions, bugs and mistakes.
  * We found the functional paradigm was easier to reason about, and hence the architecture and design of our
-programs were improved (i know, it is subjective. But try for yourself)
+programs were improved (I know, it is subjective. But try for yourself)
  
-By writing this library we wanted to demonstrate how easy it is to build a solid library - which beats all the jsonlibraries i know of
-regarding all aspects except runtime speed - by using only a limited set of buildingblocks.
-Now, the term " easy" is of course a bit misleadin. Its easy for us, but if you are not used
+By writing this library we wanted to demonstrate how easy it is to build a solid library &mdash; which beats all the JSON libraries I know of
+regarding all aspects except runtime speed - by using only a limited set of building blocks.
+Now, the term " easy" is of course a bit misleading. It's easy for us, but if you are not used
 to functions, then it might take some time to get used to. But if you take your time
 a new world will reveal itself before your eyes. I absolutely, 100 percent, positively guarantee it! <sup>1</sup> 
 
 <sup>1 Not a guarantee</sup>
 
 This library is built up by four distinct parts. Used by the others, and core to the library are the _data-objects_ 
-(org.kantega.kson.json) that represent
-a json structure. To convert to and from character streams / strings one can use the _parser_ part. To navigate in the json structure you
-can employ the _lens_ part. And finally you can map json to your domain model by using the _codec_ part.
+(`org.kantega.kson.json`) that represent
+a JSON structure. To convert to and from character streams / strings one can use the _parser_ part. To navigate in the JSON structure you
+can employ the _lens_ part. And finally you can map JSON to your domain model by using the _codec_ part.
  
-Here we explain how we built the codec. Althoug it is on the "highest level", we feel that it is a nice place to 
+Here we explain how we built the codec. Although it is on the "highest level", we feel that it is a nice place to 
 start learning.
 
-In idiomatic java (henceforth referred to as Objectoriented programming, or OO, even though many Smalltalkers would 
+In idiomatic Java (henceforth referred to as _object oriented programming_, or OO, even though many Smalltalkers would 
 protest heavily upon that
 label) one usually thinks of a program of a graph of objects that collaborate. A network of objects send messages
 or data to each other by calling each others functions. The object graph is often stored using some mapping that maps to 
-some underlying store. When we act on the application, som object graph is restored, messages are submittet to the objects,
+some underlying store. When we act on the application, some object graph is restored, messages are submitted to the objects,
 and the objects are stored again.
 
-In the Functional paradigm however, we think of a program that converts input to output. If we have persist state, we
-add that to the equotion: some input plus some state is converted to some output and a new state. Since this library does not
+In the Functional paradigm however, we think of a program that converts input to output. If we have persistent state, we
+add that to the equation: some input plus some state is converted to some output and a new state. Since this library does not
 concern itself with state, we can forget about that all together: We can work completely stateless.
 
 
 ###Basics
 To build a codec we need to main parts: something that encodes our model, and something
-that decodes it. So lets start by splitting our problem into two functions: An encoder which converts to json, 
-and a decoder which converts from json. These two functions can be represented as functional interfaces.
+that decodes it. So let's start by splitting our problem into two functions: An encoder which converts to JSON, 
+and a decoder which converts from JSON. These two functions can be represented as functional interfaces.
 
 The decoder can look like this
 ```java
@@ -713,12 +713,12 @@ Note that they both extend the ```F``` type. ```F<A,B>``` is a class from the li
 (from now on _fj_), and represents
 a function from _A_ to _B_. This means that the functional method _f()_ on ```F``` accepts any object of type _A_, and returns (yields) an object of
  type _B_. (Just like in math f(x) = x*2 is a function that accepts all real numbers, and returns a real number)
-Take note that the function does not change anything in the surroundings, it has no sideeffects. That means that
+Take note that the function does not change anything in the surroundings, it has no side effects. That means that
  calling the function with the same argument will always yield the same results.
 We extend ```F``` for two reasons: It makes it clear we think of the constructs as functions, but it also 
 gives us the benefits of using the functionaljava library, which has a lot of functionality around functions.
 
-Now we have defined our encoder and decoder functions, but we have no implementations of them yet. Lets change that
+Now we have defined our encoder and decoder functions, but we have no implementations of them yet. Let's change that
 by implementing the simplest possible encoder, an encoder for strings:
 
 ```java
@@ -730,8 +730,8 @@ public class JsonEncoders {
 }
 ```
 
-Wow, that was simple. Not everything looks complicated using FP. Lets complete the dsl with all the basic 
-json types:
+Wow, that was simple. Not everything looks complicated using FP. Let's complete the DSL with all the basic 
+JSON types:
 
 ```java
 public class JsonEncoders {
@@ -750,24 +750,24 @@ public class JsonEncoders {
 
 ### Optional values (often called _null_)
 But what about _null_? In FP, we don't use _null_, since all functions must return something. That makes your
-program safer too, since _null_ is netiher typesafe nor carries semantic meaning. You cannot look at _null_ 
+program safer too, since _null_ is neither type-safe nor does it carry semantic meaning. You cannot look at _null_ 
 and understand its meaning without looking at the context, for example the field or variable it is assigned to.
 
-But how do we represent the case when we have no value for field? Turns out java added a type to represent that:
-`Optional<T>`, which is intertpreted as "The object can contain zero or one element of type T, but you 
-do not know". We use the type `Option<A>` from fj, but for consistence. They are pretty eqvivalent.
+But how do we represent the case when we have no value for field? Turns out Java added a type to represent that:
+`Optional<T>`, which is interpreted as "The object can contain zero or one element of type T, but you 
+do not know". We use the type `Option<A>` from fj, but for consistence. They are pretty equivalent.
 
-In json a missing value is represented by the keyword _null_. But when we encode, we know the expected type, so we
+In JSON a missing value is represented by the keyword _null_. But when we encode, we know the expected type, so we
 can use an ```Option<A>``` to hold the unknown state (_null_ or value), but how do we convert?
-Lets examine the type of the function first:
+Let's examine the type of the function first:
 
-We want to convert a JsonValue that can be either _null_ or some primitive value, into an `Option<A>` where 
+We want to convert a `JsonValue` that can be either _null_ or some primitive value, into an `Option<A>` where 
 ```A``` is the type of the value. 
 
 If we know the type is either _null_ or `String` we could write 
 `JsonEncoder<Option<String>>`, but that only works for strings. We want to be able to make all types
 optional: `JsonEncoder<Option<A>>`.
-Lets implement this:
+Let's implement this:
 
 ```
   public static <A> JsonEncoder<Option<A>> optionEncoder(){
@@ -775,7 +775,7 @@ Lets implement this:
   }  
 ```
 
-So what do we actally return? It turns out we need to know how we encode `A` before we can encode `Option<A>`, so we supply
+So what do we actually return? It turns out we need to know how we encode `A` before we can encode `Option<A>`, so we supply
 that:
 
 ```
@@ -792,8 +792,8 @@ That wasn't that hard, plus we learned about fold, and got a feel for how we can
 into a transformer for optional values of that type.
 
 ###Arrays
-Lets dig deeper  and go for a non-primitive json types, for example array:
-We want to transform a `List` with `A` - `List<A>` to a json array. It's just as with option, if we can encode
+Let's dig deeper  and go for a non-primitive JSON types, for example array:
+We want to transform a `List` with `A` - `List<A>` to a JSON array. It's just as with option, if we can encode
 `A`, we can encode a `List` of `A`.
 
 ```
@@ -802,18 +802,18 @@ We want to transform a `List` with `A` - `List<A>` to a json array. It's just as
   }
 ```
 
-Now, in json, an array can interchange its the types of its element, meaning you can mix numbers, string objects etc.
-In a typed language (like java), that sort of structure is called an HList (for Heterogenous List). You basically
-have to provide a converter for all the elements which makes it a bit more complicated. Lets save that for later.
+Now, in JSON, an array can interchange its the types of its element, meaning you can mix numbers, string objects etc.
+In a typed language (like Java), that sort of structure is called an HList (for Heterogenous List). You basically
+have to provide a converter for all the elements which makes it a bit more complicated. Let's save that for later.
 
 ###Objects
-The crux of any conversion is of course nested objects. Since json is a tree, we only care about directed
-asyclic object-graphs. (If there is a cycle, you will get a stack overflow or an infinite loop)
+The crux of any conversion is of course nested objects. Since JSON is a tree, we only care about directed
+acyclic object-graphs. (If there is a cycle, you will get a stack overflow or an infinite loop)
 
 Again, as with arrays, it seems intuitive that if we know how to encode the contents of an object, we can encode
 the object itself. But since each field in the object can have its own type, we have to supply the
 encoder with encoders for all the fields, plus the field names. Since the fieldname-fieldvalue pair has no
-json representation, we use the fj tuple type (`P2`) to represent the pair: `P2<String,JsonValue>`.
+JSON representation, we use the fj tuple type (`P2`) to represent the pair: `P2<String,JsonValue>`.
 An object basically consists of a list of pairs, so we provide a list of fieldnames and converters to the 
 object converter.
 
@@ -823,9 +823,9 @@ First take:
     return x->???;
   }
 ```
-Its obvious that we are missing a couple of key points here. First - we need a way do extract the values from
-our object, and second - we need to know the types of the fields. Lets split that into two problems, and solve the
-two cases separately, and the merge them together (also a nice trait of fp)
+It's obvious that we are missing a couple of key points here. First &mdash; we need a way do extract the values from
+our object, and second &mdash; we need to know the types of the fields. Let's split that into two problems, and solve the
+two cases separately, and the merge them together (also a nice trait of FP)
 
 An object of a type can be represented as a tuple of types of the fields of the object. 
 A User
@@ -847,7 +847,7 @@ static class User{
 can be represented as a tuple 3 like this `P3<String,Integer,List<String>`, it contains the same information
 except the semantic names of the fields.
 
-Lets write an encoder for a `P3`
+Let's write an encoder for a `P3`
 ```
   public static <A, B, C> JsonEncoder<P3<A, B, C>> p3Encoder(
       P2<String, JsonEncoder<A>> a,
@@ -861,8 +861,8 @@ Lets write an encoder for a `P3`
         );
   }
 ```
-That looks like a lot of work. Too many underscores numbers and similar looking statements, this is too errorprone
-to be safe. Lets fix that by creating a type FieldEncoder<A>`` that puts fields-value pairs into an object.
+That looks like a lot of work. Too many underscores numbers and similar looking statements, this is too error prone
+to be safe. Let's fix that by creating a type `FieldEncoder<A>` that puts fields-value pairs into an object.
 ```
 public interface FieldEncoder<A> {
 
@@ -870,7 +870,7 @@ public interface FieldEncoder<A> {
 
   }
 ```
-And then lets make a constructor (=static factory function) for values of that type.
+And then let's make a constructor (=static factory function) for values of that type.
 
 ```
   public static <A> FieldEncoder<A> field(String name, JsonEncoder<A> a) {
@@ -917,9 +917,9 @@ The function of arity 8 looks like this:
 ```
 
 That is a mouthful of type information, but we only have to write it once, and it is safe. Maybe we will come back later 
-and try to find a more elegant way to encode json objects, but probably not since it works and is already written.
+and try to find a more elegant way to encode JSON objects, but probably not since it works and is already written.
 
-But that tupletizing really draws a lot of attention when reading the code (kinda the same effect as a lavalamp). We factor 
+But that tupletizing really draws a lot of attention when reading the code (kinda the same effect as a lava lamp). We factor 
 that part out into a utility function _expand_ that converts a tuple into pairs (a,b,c,d,e,f,g) -> (a,(b,(c,(e,(f,g))))) for us.
 ```
 public static <A, B, C, D, E, FF, G, H> JsonEncoder<P8<A, B, C, D, E, FF, G, H>> obj(
@@ -941,7 +941,7 @@ Not too shabby.
 
 
 
-Lets see what this will look like when we use our encoder in in an example.
+Let's see what this will look like when we use our encoder in in an example.
 We want to create an encoder for our `User` objects. The observant reader however will have noticed by now that the field _age_
 in the User class is of type _int_, but we don't have an encoder for ints. We address that first by _contramap_ ing the 
 bigDecimalDecoder
@@ -951,7 +951,7 @@ public static final JsonEncoder<Integer> integerEncoder =
 ```
 _Contramap_ is the opposite of map. We change the "inner type" of the decoder to Integer by supplying it with a 
 function from Integer to BigDecimal. When you use the encoder, you give it an Integer, and it applies the function you give
-it in the contramap before it passes it down to the BigDecimal encoder. You pass it an Integer, but it is written to json as
+it in the contramap before it passes it down to the BigDecimal encoder. You pass it an Integer, but it is written to JSON as
 a BigDecimal.
 
 
@@ -983,8 +983,8 @@ public class EncodeExample {
   }
 }
 ```
-You can see that we also use _contramap_ to convert from our `User` to a tuple3 (`P3`). It looks ugly though, and we dont
-want to write _contramap_ all over our code, so lets embed that into our dsl. 
+You can see that we also use _contramap_ to convert from our `User` to a tuple3 (`P3`). It looks ugly though, and we don't
+want to write _contramap_ all over our code, so let's embed that into our DSL. 
 
 Our highest arity converter for objects now looks like this
 ```
@@ -1017,7 +1017,7 @@ JsonEncoder<User> userEncoder =
 That looks really neat.
 
 
-Lets use the model from the Lens example, and implement that using domain objects
+Let's use the model from the Lens example, and implement that using domain objects
 ```java
 public class EncodeExample {
 
@@ -1143,15 +1143,15 @@ It prints
 It works!
 
 By using the basic encoders for numbers,booleans,null,arrays and objects we now can 
-map any domain object of any complexity to json using contramap. But we are only halfway there,
-we need to decode to. Unfortenately that is a little bit harder, since we need to 
-handle the case when the json tree does not have the shape we need to build our domain model. But with 
+map any domain object of any complexity to JSON using contramap. But we are only halfway there,
+we need to decode to. Unfortunately that is a little bit harder, since we need to 
+handle the case when the JSON tree does not have the shape we need to build our domain model. But with 
 the knowledge you have gained you will be able to figure out how to proceed.
-Remember: Think of how you transform your data, and the typesystem will guide you
+Remember: Think of how you transform your data, and the type system will guide you
 along the way. (Hint: start with the function that decodes to data, it would probably
 look something like `JsonValue -> JsonResult<A>`. Look in the codec package for guidance)
 
-This concludes the behind the scenes part. We hope you learned somethign by reading it, or at least give us feedback
+This concludes the behind the scenes part. We hope you learned something by reading it, or at least give us feedback
 about typos, errors and how to improve.
 Sincerely atle.prange@kantega.no and edvard.karlsen@kantega.no
 
