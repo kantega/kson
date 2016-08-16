@@ -14,7 +14,7 @@ library. Read more on [functionaljava.org](https://functionaljava.org/)
 Beware though: This library is slow. Very slow. Its over a hundred times slower than your favourite parser. Does it matter to you? Probably not, as most likely your database or network is the bottleneck.
 However, if you _do_ discover that indeed the JSON parsing is the bottleneck of your application, please
 let us know an we will spend some time optimizing.
-Or use one of the unsafe libraries out there. You probably know them already.
+Or you can stick to one of the unsafe libraries out there. You probably know them.
 
 
 ## Building, writing and parsing JSON
