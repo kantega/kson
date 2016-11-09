@@ -39,7 +39,7 @@ public class MicroBenchmark {
     Instant now = Instant.now();
 
     List<String> results =
-        Stream.range(0,200).map(i -> JsonParser.parse(json).validation(f -> f, s -> "Success")).toList();
+        Stream.range(0,200).map(i -> JsonParser.parse(json).fold(f -> f, s -> "Success")).toList();
 
     Instant end = Instant.now();
 

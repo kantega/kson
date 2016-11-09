@@ -11,6 +11,8 @@ import fj.test.Property;
 import fj.test.reflect.Name;
 import fj.test.runner.PropertyTestRunner;
 import org.junit.runner.RunWith;
+import org.kantega.kson.JsonResult;
+import org.kantega.kson.json.JsonNull;
 import org.kantega.kson.json.JsonValue;
 import org.kantega.kson.json.JsonValues;
 
@@ -19,6 +21,7 @@ import java.util.function.Supplier;
 import static fj.data.Enumerator.charEnumerator;
 import static fj.data.Stream.range;
 import static fj.test.Gen.elements;
+import static org.kantega.kson.json.JsonValues.*;
 
 @RunWith(PropertyTestRunner.class)
 public class ParserPropertiesTest {
@@ -71,9 +74,9 @@ public class ParserPropertiesTest {
   @Name("Any JsonValue constructed with the generators must be serialized and deserialized into the same JsonValue")
   Property p1 =
       Property.property(jsonGen(), json -> {
-        String                        jsonString = JsonWriter.writePretty(json);
-        Validation<String, JsonValue> readVal    = JsonParser.parse(jsonString);
-        return Property.prop(readVal.isSuccess() && JsonValue.eq().eq(json, readVal.success()));
+        String                jsonString = JsonWriter.writePretty(json);
+        JsonResult<JsonValue> readVal    = JsonParser.parse(jsonString);
+        return Property.prop(JsonValue.eq().eq(json, readVal.fold(f -> jNull(), v -> v)));
       });
 
 }
