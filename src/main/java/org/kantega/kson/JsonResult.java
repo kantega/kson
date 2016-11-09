@@ -60,9 +60,9 @@ public class JsonResult<A> {
         return validation.validation(f -> a, aa -> aa);
     }
 
-    public A orThrow(F0<? extends RuntimeException> supplier) {
+    public A orThrow(F<String, ? extends RuntimeException> supplier) {
         if (validation.isFail())
-            throw supplier.f();
+            throw supplier.f(validation.fail());
         else return validation.success();
     }
 
