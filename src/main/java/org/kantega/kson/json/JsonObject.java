@@ -12,39 +12,43 @@ import java.math.BigDecimal;
 
 public class JsonObject extends JsonValue {
 
-  public static final JsonObject empty =
+    public static final JsonObject empty =
       JsonObject(List.nil());
 
-  public static final Equal<JsonObject> eq =
+    public static final Equal<JsonObject> eq =
       Equal.treeMapEqual(Equal.stringEqual, JsonValue.eq()).contramap(obj -> obj.pairs);
 
-  public final TreeMap<String, JsonValue> pairs;
+    public final TreeMap<String, JsonValue> pairs;
 
-  public JsonObject(TreeMap<String, JsonValue> pairs) {
-    this.pairs = pairs;
-  }
+    public JsonObject(TreeMap<String, JsonValue> pairs) {
+        this.pairs = pairs;
+    }
 
-  public static JsonObject JsonObject(List<P2<String, JsonValue>> vals) {
-    return new JsonObject(TreeMap.iterableTreeMap(Ord.stringOrd, vals));
-  }
+    public static JsonObject JsonObject(List<P2<String, JsonValue>> vals) {
+        return new JsonObject(TreeMap.iterableTreeMap(Ord.stringOrd, vals));
+    }
 
-  public JsonObject update(F<TreeMap<String, JsonValue>,TreeMap<String, JsonValue>> f){
-    return new JsonObject(f.f(pairs));
-  }
+    public JsonObject empty() {
+        return empty;
+    }
 
-  public JsonObject withField(String name, JsonValue value) {
-    return new JsonObject(pairs.set(name, value));
-  }
+    public JsonObject update(F<TreeMap<String, JsonValue>, TreeMap<String, JsonValue>> f) {
+        return new JsonObject(f.f(pairs));
+    }
 
-  public Option<JsonValue> get(String fieldName) {
-    return pairs.get(fieldName);
-  }
+    public JsonObject withField(String name, JsonValue value) {
+        return new JsonObject(pairs.set(name, value));
+    }
 
-  @Override
-  public String toString() {
-    final StringBuffer sb = new StringBuffer("JsonObject{");
-    sb.append(pairs);
-    sb.append('}');
-    return sb.toString();
-  }
+    public Option<JsonValue> get(String fieldName) {
+        return pairs.get(fieldName);
+    }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("JsonObject{");
+        sb.append(pairs);
+        sb.append('}');
+        return sb.toString();
+    }
 }

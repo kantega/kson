@@ -5,6 +5,8 @@ import fj.F0;
 import fj.data.List;
 import fj.data.Validation;
 
+import java.util.function.Supplier;
+
 /**
  * A thin wrapper around Validation&lparen;String,A>
  *
@@ -28,6 +30,10 @@ public class JsonResult<A> {
 
     public static <A> JsonResult<A> fromValidation(Validation<String, A> validation) {
         return new JsonResult<>(validation);
+    }
+
+    public Validation<String, A> toValidation() {
+        return validation;
     }
 
     public static <A> JsonResult<List<A>> sequence(List<JsonResult<A>> results) {
@@ -56,8 +62,16 @@ public class JsonResult<A> {
         return mod(v -> v.map(f).bind(v2 -> v2.validation));
     }
 
-    public A orElse(A a) {
-        return validation.validation(f -> a, aa -> aa);
+    public A orElse(F0<A> a) {
+        return validation.validation(f -> a.f(), aa -> aa);
+    }
+
+    public JsonResult<A> orResult(F0<JsonResult<A>> other) {
+        return bind(u -> other.f());
+    }
+
+    public A orThrow(){
+        return orThrow(RuntimeException::new);
     }
 
     public A orThrow(F<String, ? extends RuntimeException> supplier) {

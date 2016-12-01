@@ -32,7 +32,7 @@ public class JsonLens<S, A> {
   }
 
   public S setF(S origin, A value) {
-    return set(origin, value).orElse(origin);
+    return set(origin, value).orElse(()->origin);
   }
 
   public F<S, S> setF(A value) {
@@ -48,7 +48,7 @@ public class JsonLens<S, A> {
   }
 
   public S modF(S origin, F<A, A> f) {
-    return mod(origin, a -> JsonResult.success(f.f(a))).orElse(origin);
+    return mod(origin, a -> JsonResult.success(f.f(a))).orElse(()->origin);
   }
 
   public F<S, S> modF(F<A, A> f) {
