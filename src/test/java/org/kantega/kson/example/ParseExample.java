@@ -32,7 +32,7 @@ public class ParseExample {
 
     final F<JsonValue, JsonResult<P2<String,BigDecimal>>> getNameAndAge =
         obj ->
-            obj.getFieldAsText("name").bind(name -> obj.getFieldAsNumber("age").map(age -> P.p(name, age))).option(JsonResult.fail("'name' or 'age' is missing"), JsonResult::success);
+            obj.getFieldAsText("name").bind(name -> obj.getFieldAsNumber("age").map(age -> P.p(name, age))).fold(f->JsonResult.fail("'name' or 'age' is missing"), JsonResult::success);
 
     final String output =
         parsedJsonV.fold(
