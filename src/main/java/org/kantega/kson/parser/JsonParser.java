@@ -124,17 +124,14 @@ public class JsonParser {
               return Validation.fail(new ParseFailure(() -> "\" or \\" ));
 
           StringBuilder     mutableBuilder = new StringBuilder();
-          Stream<Character> mutableChars   = stream;
-          while (!mutableChars.isEmpty() && mutableChars.head() != '"' && mutableChars.head() != '\\') {
-              mutableBuilder.append(mutableChars.head());
-              mutableChars = mutableChars.tail()._1();
+          Stream<Character> mutableTail   = stream;
+          while (!mutableTail.isEmpty() && mutableTail.head() != '"' && mutableTail.head() != '\\') {
+              mutableBuilder.append(mutableTail.head());
+              mutableTail = mutableTail.tail()._1();
           }
-          return Validation.success(Result.result(mutableChars, Stream.fromString(mutableBuilder.toString())));
+          return Validation.success(Result.result(mutableTail, Stream.fromString(mutableBuilder.toString())));
       });
-     /* Parser.StreamParser.satisfy(
-          missingInput,
-          (i) -> f(() -> i + " is not a letter"),
-          x -> x != '"' && x != '\\');*/
+
 
     private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> chars =
       flatten(charr.or(special).repeat());
