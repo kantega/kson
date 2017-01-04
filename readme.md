@@ -2,7 +2,7 @@
 
 KSON is a safe and minimal library for parsing text into JSON, writing JSON, and converting JSON to and from your domain types.
 
-By safe we mean no side effects (exceptions, mutations). All objects are immutable and thread safe. (Also the fields of all 
+By safe we mean no side effects (exceptions, mutations) and typesafe everywhere. All objects are immutable and thread safe. (Also the fields of all 
 objects this library produces are immutable and thread safe,
 we even encourage the use of object fields, they are all final) The API will not let you perform operations that will
 leave your objects in an undefined or undesired state. If you follow the types, it works!
