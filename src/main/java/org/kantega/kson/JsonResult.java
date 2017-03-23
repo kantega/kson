@@ -4,8 +4,8 @@ import fj.F;
 import fj.F0;
 import fj.data.List;
 import fj.data.Validation;
-
-import java.util.function.Supplier;
+import org.kantega.kson.codec.JsonDecoder;
+import org.kantega.kson.json.JsonValue;
 
 /**
  * A thin wrapper around Validation&lparen;String,A>
@@ -28,8 +28,64 @@ public class JsonResult<A> {
         return new JsonResult<>(Validation.success(a));
     }
 
+    public static <A> JsonResult<A> tried(F0<A> a) {
+        try {
+            return new JsonResult<>(Validation.success(a.f()));
+        }catch (Exception e){
+            return JsonResult.fail(e.getClass().getSimpleName()+":"+e.getMessage());
+        }
+    }
+
+    public <B> JsonResult<B> decode(JsonDecoder<B> decoder){
+        return onJsonValue(decoder);
+    }
+
     public static <A> JsonResult<A> fromValidation(Validation<String, A> validation) {
         return new JsonResult<>(validation);
+    }
+
+    public JsonResult<JsonValue> field(String field) {
+        return onJsonValue(json -> json.getField(field));
+    }
+
+    public JsonResult<JsonValue> index(int i){
+        return onJsonValue(jsonValue -> jsonValue.onArray(list->JsonResult.tried(()->(list.toArray().get(i)))).orElse(JsonResult.fail("Not an array")));
+    }
+
+    public JsonResult<String> indexAsString(int i){
+        return index(i).asString();
+    }
+
+    public String indexAsString(int i, String defaultValue){
+        return indexAsString(i).orElse(()->defaultValue);
+    }
+
+    public JsonResult<String> fieldAsString(String field){
+        return field(field).asString();
+    }
+
+    public String fieldAsString(String field,String defaultValue){
+        return field(field).asString().orElse(()->defaultValue);
+    }
+
+    public JsonResult<String> asString() {
+        return onJsonValue(JsonValue::asText);
+    }
+
+    public String asString(String defaultValue) {
+        return onJsonValue(JsonValue::asText).orElse(()->defaultValue);
+    }
+
+    public <A> JsonResult<A> onJsonValue(F<JsonValue, JsonResult<A>> f) {
+        return validation.validation(
+          fail -> JsonResult.fail(fail),
+          s -> {
+              if (s instanceof JsonValue) {
+                  return f.f((JsonValue) s);
+              } else
+                  return JsonResult.fail("Not a json value");
+          }
+        );
     }
 
     public Validation<String, A> toValidation() {
@@ -66,11 +122,15 @@ public class JsonResult<A> {
         return validation.validation(f -> a.f(), aa -> aa);
     }
 
+    public A orElse(F<String,A> a) {
+        return validation.validation(a::f, aa -> aa);
+    }
+
     public JsonResult<A> orResult(F0<JsonResult<A>> other) {
         return bind(u -> other.f());
     }
 
-    public A orThrow(){
+    public A orThrow() {
         return orThrow(RuntimeException::new);
     }
 

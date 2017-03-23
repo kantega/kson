@@ -59,7 +59,7 @@ public abstract class JsonValue {
             .option(
               JsonResult.<JsonValue>fail("Field " + field + " not found"),
               JsonResult::success)
-        ).orElse(JsonResult.fail("Trying to get field " + field + ", but this is not abject"));
+        ).orElse(JsonResult.fail("Trying to field field " + field + ", but this is not abject"));
     }
 
     public Option<JsonValue> setField(String name, JsonValue value) {

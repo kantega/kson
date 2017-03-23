@@ -19,12 +19,12 @@ import static org.kantega.kson.json.JsonObject.JsonObject;
 
 public class JsonParser {
 
-    static ParseFailure f(Supplier<String> msg) {
+    static ParseFailure fail(Supplier<String> msg) {
         return new ParseFailure(msg);
     }
 
     private static final ParseFailure missingInput =
-      f(() -> "Missing input");
+      fail(() -> "Missing input");
 
     // *** Tokens ***
 
@@ -41,7 +41,7 @@ public class JsonParser {
       on("\\\"", "\"");
 
     private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> formfeed =
-      on("\\f", "\f");
+      on("\\fail", "\f");
 
     private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> reverseSolidus =
       on("\\\\", "\\");
@@ -50,7 +50,7 @@ public class JsonParser {
       on("\\/", "/");
 
     private static final Parser<Stream<Character>, Character, ParseFailure> hex =
-      Parser.StreamParser.satisfy(missingInput, (i) -> f(() -> i + " is not a hexadecimal character"), ch -> Character.isDigit(ch) || "abcde".contains(ch.toString().toLowerCase()));
+      Parser.StreamParser.satisfy(missingInput, (i) -> fail(() -> i + " is not a hexadecimal character"), ch -> Character.isDigit(ch) || "abcde".contains(ch.toString().toLowerCase()));
 
     private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> control =
       singleChar('u').bind(u -> hex.bind(h1 -> hex.bind(h2 -> hex.bind(h3 -> hex.map(h4 -> u.append(Stream.arrayStream(h1, h2, h3, h4)))))));
@@ -92,7 +92,7 @@ public class JsonParser {
       singleChar('e').or(singleChar('E')).or(sequence("e+")).or(sequence("e-")).or(sequence("E+")).or(sequence("E-"));
 
     private static final Parser<Stream<Character>, Character, ParseFailure> digit =
-      Parser.StreamParser.satisfy(missingInput, (i) -> f(() -> i + " is not a digit"), Character::isDigit);
+      Parser.StreamParser.satisfy(missingInput, (i) -> fail(() -> i + " is not a digit"), Character::isDigit);
 
     private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> digits =
       digit.repeat1();
@@ -114,17 +114,28 @@ public class JsonParser {
         .or(and(intt, exp))
         .or(and(intt, frac, exp));
 
+    private final static Validation<ParseFailure, Result<Stream<Character>, Stream<Character>>> failure =
+      Validation.fail(new ParseFailure(() -> "end"));
+
+    private final static Validation<ParseFailure, Result<Stream<Character>, Stream<Character>>> illegalslash =
+      Validation.fail(new ParseFailure(() -> "\" or \\"));
 
     private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> charr =
       Parser.parser(stream -> {
           if (stream.isEmpty())
-              return Validation.fail(new ParseFailure(() -> "Unexpected end"));
+              return
+                failure;
 
-          if(stream.head() == '"' || stream.head() == '\\')
-              return Validation.fail(new ParseFailure(() -> "\" or \\" ));
+          if (stream.head() == '"' || stream.head() == '\\')
+              return
+                illegalslash;
 
-          StringBuilder     mutableBuilder = new StringBuilder();
-          Stream<Character> mutableTail   = stream;
+          StringBuilder mutableBuilder =
+            new StringBuilder();
+
+          Stream<Character> mutableTail =
+            stream;
+
           while (!mutableTail.isEmpty() && mutableTail.head() != '"' && mutableTail.head() != '\\') {
               mutableBuilder.append(mutableTail.head());
               mutableTail = mutableTail.tail()._1();
@@ -183,11 +194,11 @@ public class JsonParser {
     // *** Helpers ***
 
     private static Parser<Stream<Character>, Stream<Character>, ParseFailure> singleChar(Character c) {
-        return character(missingInput, (i) -> f(() -> "'" + i + "' is not a '" + c.toString() + "'"), c).map(Stream::single);
+        return character(missingInput, (i) -> fail(() -> "'" + i + "' is not a '" + c.toString() + "'"), c).map(Stream::single);
     }
 
     private static Parser<Stream<Character>, Stream<Character>, ParseFailure> sequence(String chars) {
-        return characters(missingInput, (i) -> f(() -> "'" + i + "' is not a '" + chars + "'"), Stream.fromString(chars));
+        return characters(missingInput, (i) -> fail(() -> "'" + i + "' is not a '" + chars + "'"), Stream.fromString(chars));
     }
 
     private static Parser<Stream<Character>, String, ParseFailure> string(String chars) {

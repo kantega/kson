@@ -70,6 +70,14 @@ public class JsonDecoders {
           v.onObject(and(a, b)::apply).orElse(fail("Not an object"));
     }
 
+    public static <A, B,C> JsonDecoder<C> obj(
+      FieldDecoder<A> a,
+      FieldDecoder<B> b,
+      F2<A,B,C> f) {
+        return v ->
+          v.onObject(and(a, b)::apply).orElse(fail("Not an object")).map(t->f.f(t._1(),t._2()));
+    }
+
     public static <A, B, C> JsonDecoder<P3<A, B, C>> obj(
       FieldDecoder<A> a,
       FieldDecoder<B> b,

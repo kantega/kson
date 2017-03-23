@@ -38,10 +38,14 @@ public class MicroBenchmark {
 
     Instant now = Instant.now();
 
+    System.out.println("Start at"+now);
+
     List<String> results =
-        Stream.range(0,200).map(i -> JsonParser.parse(json).fold(f -> f, s -> "Success")).toList();
+        Stream.range(0,2).map(i -> JsonParser.parse(json).fold(f -> f, s -> "Success")).toList();
 
     Instant end = Instant.now();
+
+    System.out.println("End at"+end);
 
     System.out.print(results + "\nElapsed :" + (Duration.between(now, end).toMillis() / results.length()));
 

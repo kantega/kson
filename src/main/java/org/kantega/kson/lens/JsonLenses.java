@@ -13,6 +13,13 @@ import static org.kantega.kson.JsonResult.success;
 
 public class JsonLenses {
 
+  public static JsonValueLens selfLens(){
+    return new JsonValueLens(
+      JsonResult::success,
+      (a, origin) -> JsonResult.success(a)
+    );
+  }
+
   public static JsonValueLens objLens(
       F<TreeMap<String, JsonValue>, JsonResult<JsonValue>> get,
       F2<JsonValue, TreeMap<String, JsonValue>, TreeMap<String, JsonValue>> set) {

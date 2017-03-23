@@ -83,7 +83,7 @@ public class JsonValueLens extends JsonLens<JsonValue, JsonValue> {
   public JsonLens<JsonValue, List<JsonValue>> asArray() {
     return
         xmap(
-            a -> a.onArray(list -> JsonResult.success(list)).orElse(fail("Not an object")),
+            a -> a.onArray(JsonResult::success).orElse(fail("Not an object")),
             list-> JsonResult.success(JsonValues.jArray(list))
         );
   }
