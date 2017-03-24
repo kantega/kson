@@ -45,7 +45,7 @@ public class JsonLenses {
     );
   }
 
-  public static JsonValueLens select(String fieldName) {
+  public static JsonValueLens field(String fieldName) {
     return objLens(
         map -> map.get(fieldName).option(JsonResult.fail("No field with name " + fieldName + " in object"), JsonResult::success),
         (a, map) -> map.set(fieldName, a)

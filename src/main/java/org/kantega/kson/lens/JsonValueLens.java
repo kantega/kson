@@ -37,7 +37,7 @@ public class JsonValueLens extends JsonLens<JsonValue, JsonValue> {
   }
 
   public JsonValueLens select(String fieldName) {
-    return then(JsonLenses.select(fieldName));
+    return then(JsonLenses.field(fieldName));
   }
 
   public JsonLens<JsonValue, String> asString() {

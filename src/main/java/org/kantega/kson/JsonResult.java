@@ -7,6 +7,9 @@ import fj.data.Validation;
 import org.kantega.kson.codec.JsonDecoder;
 import org.kantega.kson.json.JsonValue;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 /**
  * A thin wrapper around Validation&lparen;String,A>
  *
@@ -14,7 +17,7 @@ import org.kantega.kson.json.JsonValue;
  */
 public class JsonResult<A> {
 
-    final Validation<String, A> validation;
+    private final Validation<String, A> validation;
 
     private JsonResult(Validation<String, A> validation) {
         this.validation = validation;
@@ -31,12 +34,12 @@ public class JsonResult<A> {
     public static <A> JsonResult<A> tried(F0<A> a) {
         try {
             return new JsonResult<>(Validation.success(a.f()));
-        }catch (Exception e){
-            return JsonResult.fail(e.getClass().getSimpleName()+":"+e.getMessage());
+        } catch (Exception e) {
+            return JsonResult.fail(e.getClass().getSimpleName() + ":" + e.getMessage());
         }
     }
 
-    public <B> JsonResult<B> decode(JsonDecoder<B> decoder){
+    public <B> JsonResult<B> decode(JsonDecoder<B> decoder) {
         return onJsonValue(decoder);
     }
 
@@ -48,32 +51,97 @@ public class JsonResult<A> {
         return onJsonValue(json -> json.getField(field));
     }
 
-    public JsonResult<JsonValue> index(int i){
-        return onJsonValue(jsonValue -> jsonValue.onArray(list->JsonResult.tried(()->(list.toArray().get(i)))).orElse(JsonResult.fail("Not an array")));
+    public JsonResult<JsonValue> index(int i) {
+        return asArray().bind(list -> JsonResult.tried(() -> (list.toArray().get(i))));
     }
 
-    public JsonResult<String> indexAsString(int i){
+    public JsonResult<List<JsonValue>> asArray() {
+        return onJsonValue(jsonValue -> jsonValue.onArray(JsonResult::success).orElse(JsonResult.fail("Not an array")));
+    }
+
+    public JsonResult<List<JsonValue>> fieldAsArray(String field) {
+        return field(field).onJsonValue(jsonValue -> jsonValue.onArray(JsonResult::success).orElse(JsonResult.fail("Not an array")));
+    }
+
+    public JsonResult<List<String>> asStrings() {
+        return asArray().bind(list -> sequence(list.map(JsonValue::asText)));
+    }
+
+    public JsonResult<List<String>> fieldAsStrings(String field) {
+        return field(field).asStrings();
+    }
+
+    public JsonResult<List<BigDecimal>> asNumbers() {
+        return asArray().bind(list -> sequence(list.map(JsonValue::asNumber)));
+    }
+
+    public JsonResult<List<BigDecimal>> fieldAsNumbers(String field) {
+        return field(field).asNumbers();
+    }
+
+    public JsonResult<List<Boolean>> asBools() {
+        return asArray().bind(list -> sequence(list.map(JsonValue::asBool)));
+    }
+
+    public JsonResult<List<Boolean>> fieldAsBools(String field) {
+        return field(field).asBools();
+    }
+
+    public JsonResult<String> indexAsString(int i) {
         return index(i).asString();
     }
 
-    public String indexAsString(int i, String defaultValue){
-        return indexAsString(i).orElse(()->defaultValue);
+    public JsonResult<BigDecimal> indexAsNumber(int i) {
+        return index(i).asNumber();
     }
 
-    public JsonResult<String> fieldAsString(String field){
+    public JsonResult<Boolean> indexAsBool(int i) {
+        return index(i).asBoolean();
+    }
+
+    public String indexAsString(int i, String defaultValue) {
+        return indexAsString(i).orElse(() -> defaultValue);
+    }
+
+    public BigDecimal indexAsNumber(int i, BigDecimal defaultValue) {
+        return indexAsNumber(i).orElse(() -> defaultValue);
+    }
+
+    public Boolean indexAsBool(int i, Boolean defaultValue) {
+        return indexAsBool(i).orElse(() -> defaultValue);
+    }
+
+    public JsonResult<String> fieldAsString(String field) {
         return field(field).asString();
     }
 
-    public String fieldAsString(String field,String defaultValue){
-        return field(field).asString().orElse(()->defaultValue);
+    public JsonResult<BigDecimal> fieldAsNumber(String field) {
+        return field(field).asNumber();
+    }
+
+    public JsonResult<Boolean> fieldAsBool(String field) {
+        return field(field).asBoolean();
+    }
+
+    public String fieldAsString(String field, String defaultValue) {
+        return field(field).asString().orElse(() -> defaultValue);
     }
 
     public JsonResult<String> asString() {
         return onJsonValue(JsonValue::asText);
     }
 
+    public JsonResult<BigDecimal> asNumber() {
+        return onJsonValue(JsonValue::asNumber);
+    }
+
+    public JsonResult<Boolean> asBoolean() {
+        return onJsonValue(JsonValue::asBool);
+    }
+
+
     public String asString(String defaultValue) {
-        return onJsonValue(JsonValue::asText).orElse(()->defaultValue);
+        return onJsonValue(JsonValue::asText).orElse(() -> defaultValue);
     }
 
     public <A> JsonResult<A> onJsonValue(F<JsonValue, JsonResult<A>> f) {
@@ -122,7 +190,7 @@ public class JsonResult<A> {
         return validation.validation(f -> a.f(), aa -> aa);
     }
 
-    public A orElse(F<String,A> a) {
+    public A orElse(F<String, A> a) {
         return validation.validation(a::f, aa -> aa);
     }
 

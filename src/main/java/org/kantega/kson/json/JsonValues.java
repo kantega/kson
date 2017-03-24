@@ -39,6 +39,26 @@ public class JsonValues {
     return P.p(name,value);
   }
 
+  public static P2<String,JsonValue> field(String name, String value){
+    return field(name,jString(value));
+  }
+
+  public static P2<String,JsonValue> field(String name, long value){
+    return field(name,jNum(value));
+  }
+
+  public static P2<String,JsonValue> field(String name, double value){
+    return field(name,jNum(value));
+  }
+
+  public static P2<String,JsonValue> field(String name, BigDecimal value){
+    return field(name,jNum(value));
+  }
+
+  public static P2<String,JsonValue> field(String name, boolean value){
+    return field(name,jBool(value));
+  }
+
   public static JsonValue jNull(){
     return jNull;
   }

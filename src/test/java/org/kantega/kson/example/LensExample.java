@@ -13,23 +13,23 @@ public class LensExample {
   public static void main(String[] args) {
 
     JsonLens<JsonValue, String> zipLens =
-        JsonLenses.select("address").select("zip").asString();
+        JsonLenses.field("address").select("zip").asString();
 
 
     JsonValue userjson =
         jObj(
-            field("name", jString("Ole Normann")),
+            field("name", "Ole Normann"),
             field("address", jObj(
-                field("street", jString("Kongensgate 3")),
-                field("zip", jString("1234")) //Observe the presence of this field
+                field("street", "Kongensgate 3"),
+                field("zip", "1234") //Observe the presence of this field
             ))
         );
 
     JsonValue invalidUserJson =
         jObj(
-            field("name", jString("Kari Normann")),
+            field("name", "Kari Normann"),
             field("address", jObj(
-                field("street", jString("Kongensgate 3"))
+                field("street", "Kongensgate 3")
                 //Behold the missing zipcode field
             ))
         );
@@ -44,13 +44,13 @@ public class LensExample {
 
 
     JsonValueLens modelLens =
-        JsonLenses.select("model");
+        JsonLenses.field("model");
 
     JsonValueLens leaderLens =
-        JsonLenses.select("leader");
+        JsonLenses.field("leader");
 
     JsonValueLens usersLens =
-        JsonLenses.select("users");
+        JsonLenses.field("users");
 
     //Replace leader
     JsonValue updatedLeaderModel =

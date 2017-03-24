@@ -6,6 +6,8 @@ import org.kantega.kson.codec.JsonDecoders;
 import org.kantega.kson.json.JsonValue;
 import org.kantega.kson.parser.JsonParser;
 
+import static org.kantega.kson.codec.JsonDecoders.*;
+
 public class DecodeExample {
 
     final static String jsonString = "{\n" +
@@ -21,7 +23,7 @@ public class DecodeExample {
       "      {\n" +
       "        \"address\":{\n" +
       "          \"street\":\"defstreet\",\n" +
-      "          \"zip\":\"4321\"\n" +
+      "          \"zip\":\"43210\"\n" +
       "        },\n" +
       "        \"name\":\"Kari Normann\"\n" +
       "      },\n" +
@@ -59,9 +61,9 @@ public class DecodeExample {
     public static void main(String[] args) {
 
         final JsonDecoder<Address> adressDecoder =
-          JsonDecoders.obj(
-            JsonDecoders.field("street", JsonDecoders.stringDecoder),
-            JsonDecoders.field("zip", JsonDecoders.stringDecoder),
+          obj(
+            field("street", stringDecoder),
+            field("zip", stringDecoder.ensure(z -> z.length() < 5)),
             Address::new
           );
 
@@ -73,6 +75,11 @@ public class DecodeExample {
           json.field("model").field("leader").field("address").decode(adressDecoder).orThrow(RuntimeException::new);
 
         System.out.println(address);
+
+        JsonResult<Address> userAddress =
+          json.field("model").field("users").index(0).field("address").decode(adressDecoder);
+
+        System.out.println(userAddress);
     }
 
 }
