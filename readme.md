@@ -23,20 +23,73 @@ Let's begin by constructing some JSON values with the ```JsonValues``` class. By
 you get a nice and readable DSL for constructing 
 JSON values:
 ```java
-public class ParseExample {
-  public static void main(String[] args) {
+public class WriteAndParseJsonExample {
 
-    final JsonObject json =
-        jObj(
-            field("name", jString("Ola Nordmann")),
-            field("age", jNum(28)),
-            field("favourites", jArray(jString("red"), jString("blue"), jString("purple")))
-        );
-  }
+
+    public static void main(String[] args) {
+
+        //Constructing
+        JsonValue userjson =
+          jObj(
+            field("name", "Ole Normann"),
+            field("address", jObj(
+              field("street", "Kongensgate 3"),
+              field("zip", "1234") //Observe the presence of this field
+            ))
+          );
+
+        JsonValue userWithoutZipcode =
+          jObj(
+            field("name", "Kari Normann"),
+            field("address", jObj(
+              field("street", "Kongensgate 3")
+              //Behold the missing zipcode field
+            ))
+          );
+
+        //Values are reusable and can be nested.
+        JsonValue team =
+          jObj(
+            field("team",
+              jObj(
+                field("members", jArray(userjson, userWithoutZipcode)),
+                field("name", "A-team")
+              )));
+
+
+        //Write to a string
+        String jsonAsString =
+          JsonWriter.writePretty(team);
+
+        //Parse a string
+        JsonResult<JsonValue> json =
+          JsonParser.parse(jsonAsString);
+
+
+        //Find the zipcode of the first user
+        String zip1 =
+          json.field("team").field("members").index(0).field("address").fieldAsString("zip", "unknown");
+        //Zip 1 is "1234"
+
+        //If a field is not present, or a conversion fails, the navigations aborts, and the default value is used.
+        String zip2 =
+          json.field("team").field("members").index(1).field("address").fieldAsString("zip", "unknown");
+        //zip2 is "unknown" since the field is not present.
+
+
+        //You can also keep the JsonResult directly
+        JsonResult<JsonValue> failedResult =
+          json.field("temas"); //Yields a failed JsonResult
+
+        JsonResult<JsonValue> teamsResult =
+          json.field("team"); //Yields a failed JsonResult
+
+
+    }
 }
 ```
 
-The example is pretty self-explanatory, but notice that you explicitly have to define the type of the JSON value, for example "jString". 
+The example is pretty self-explanatory. 
 We have chosen not to provide any shortcuts, and no under-the-hood conversion. If you would like the convenience of constructing 
 JsonString objects automatically, you can provide your own DSL. 
 (In fact, that is why we use static methods and static imports for the DSL, it makes it very easy to extend the DSL with your own combinators)
@@ -45,64 +98,8 @@ In order to serialize the JSON object you use the ```JsonWriter.write(JsonValue)
 You probably guessed that
 writePretty outputs prettified JSON. (It's not actually pretty, just indented. Writing really pretty JSON is impossible) 
 
-Let's give it a go:
-```java
-public class ParseExample {
-  public static void main(String[] args) {
-
-    final JsonObject json =
-        jObj(
-            field("name", jString("Ola Nordmann")),
-            field("age", jNum(28)),
-            field("favourites", jArray(jString("red"), jString("blue"), jString("purple")))
-        );
-        
-    final String jsonString =
-        JsonWriter.writePretty(json);
-        
-    System.out.println(jsonString);
-  }
-}
-```
-Which outputs
-```json
-{
-  "age":28,
-  "favourites":[
-    "red",
-    "blue",
-    "purple"
-  ],
-  "name":"Ola Nordmann"
-}
-```
-
-That was easy.
 
 
-
-
-Now let's parse the string again:
-```java
-public class ParseExample {
-  public static void main(String[] args) {
-
-    final JsonObject json =
-        jObj(
-            field("name", jString("Ola Nordmann")),
-            field("age", jNum(28)),
-            field("favourites", jArray(jString("red"), jString("blue"), jString("purple")))
-        );
-    
-    final String jsonString =
-        JsonWriter.writePretty(json);
-    
-    
-    final JsonResult<JsonValue> parsedJsonV =
-        JsonParser.parse(jsonString);
-  }
-}
-```
 Observe that the parser yields a `JsonResult<JsonValue>`. A `JsonResult` is actually just a wrapper around ```Validation<String, JsonValue>```. Of you are unfamiliar with the validation type you 
 can google it, there are plenty of articles 
  that introduce the concept. Basically a Validation holds either a failure value (A ```String``` explaining what went 
@@ -110,183 +107,12 @@ can google it, there are plenty of articles
  or a success value, you have to use some of its convenience methods or fold it to find out.
 
 
-(If you are used to functional programming, you probably want to skip to the conversion section now...)
+The JsonResult type can be used for navigating down and extracting values from the contained json. If it doesnt 
 
-Now we have a validation with either a failure message or a `JsonValue` object, but which one? To make matters slightly worse, 
-we do not even know what type
-of `JsonValue` we have. (Well, _we_ do, because we wrote the JSON string we parsed, but imagine you got that string from 
-someone else, over the internet even.)
-
-The idiomatic Java solution would be to throw an exception in the failure case, and leave that for later (= never), 
-and then maybe cast to the expected kind of
-`JsonValue`. But that is not safe, and this is a safe library. Plus: we are smarter than that!
- 
-When you can assume that the string you parse has a certain structure (we will cover the case where you cannot or don't 
-want to use a priori 
-knowledge of the structure later on), you can construct a program that performs some operation on that structure or performs 
-some failure handling if it does
- not match.
-
-Let's make a program that prints the name and age contained in the JSON structure. 
-```java
-public class ParseExample {
-  public static void main(String[] args) {
-
-    final JsonValue json =
-        jObj(
-            field("name", jString("Ola Nordmann")),
-            field("age", jNum(28)),
-            field("favourites", jArray(jString("red"), jString("blue"), jString("purple")))
-        );
-
-    final String jsonString =
-        JsonWriter.writePretty(json);
-
-    final JsonResult<JsonValue> parsedJsonV =
-        JsonParser.parse(jsonString);
-
-    final F<JsonValue, JsonResult<P2<String,BigDecimal>>> getNameAndAge =
-        obj ->
-            obj.getFieldAsText("name").bind(name -> obj.getFieldAsText("age").map(age -> P.p(name, age))).option(JsonResult.fail("Oh noh!"), JsonResult::success);
-
-    final String output =
-        parsedJsonV.fold(
-            failmsg -> failmsg,
-            parsedJson -> getNameAndAge.f(parsedJson).fold(failmsg2 -> failmsg2, nameAndAge -> nameAndAge._1()+","+nameAndAge._2()));
-
-    System.out.println(output);
-
-  }
-}
-```
-Our name and age extraction consists of two interesting parts:
-First we have a function (the object of type ```F```) that accepts a JsonValue and yields a Validation with a string 
-explaining the failure as the fail value, 
-and the name and age concatenated
-as the success value. 
-Then we bind the function to the first validation. If the validation is a fail, we just get the message. If it is a success, 
-we apply the function to get a new validation which we fold into
-either a new fail message or the string we are constructing.
-
-Hmm, that seemed more complicated that it could have been. But why?
-It is a consequence of constructing a safe program. When we have a result, we know that we are in a consistent state. 
-It seems annoying to handle all possible failures
-in a trivial example like this, but most programs start out as trivial. When we are forced to make qualified choices of 
-how the program is constructed 
-(including how to handle failure states)
-early on, we assure ourselves that the application can grow without peril.
-
-When we try it, it prints
-
-```
-Oh noh!
-
-```
-
-Bummer!
-
-You probably spotted the bug earlier. I expected the age to be a string. If we try to convert to the wrong type we get `None`, 
-which we converted to a failure message.
-Let's correct the bug and try again:
-
-```java
-public class ParseExample {
-  public static void main(String[] args) {
-
-    final JsonValue json =
-        jObj(
-            field("name", jString("Ola Nordmann")),
-            field("age", jNum(28)),
-            field("favourites", jArray(jString("red"), jString("blue"), jString("purple")))
-        );
-
-    final String jsonString =
-        JsonWriter.writePretty(json);
-
-    final JsonResult<JsonValue> parsedJsonV =
-        JsonParser.parse(jsonString);
-
-    final F<JsonValue, JsonResult<P2<String,BigDecimal>>> getNameAndAge =
-        obj ->
-            obj.getFieldAsText("name").bind(name -> obj.getFieldAsNumber("age").map(age -> P.p(name, age))).option(JsonResult.fail("'name' or 'age' is missing"), JsonResult::success);
-
-    final String output =
-        parsedJsonV.fold(
-            failmsg -> failmsg,
-            parsedJson -> getNameAndAge.f(parsedJson).fold(failmsg2 -> failmsg2, nameAndAge -> nameAndAge._1()+","+nameAndAge._2()));
-
-    System.out.println(output);
-
-  }
-}
-```
-which prints
-```
-Ola Nordmann, 28
-
-```
-
-Phew! But Kson was supposed to be safe, what happened? Well. It _is_ safe, we did not throw any exceptions or burn 
-down any building or the likes. 
-And with a small modification we can let the compiler find bugs like this for us. Let's try again.
-```java
-public class ParseExample {
-  public static void main(String[] args) {
-
-    final JsonObject json =
-        jObj(
-            field("name", jString("Ola Nordmann")),
-            field("age", jNum(28)),
-            field("favourites", jArray(jString("red"), jString("blue"), jString("purple")))
-        );
-
-    final String jsonString =
-        JsonWriter.writePretty(json);
-
-    final Validation<String, JsonValue> parsedJsonV =
-        JsonParser.parse(jsonString);
-
-    final F<JsonValue, Validation<String, P2<String,BigDecimal>>> getNameAndAge =
-        obj ->
-            getFieldAsText(obj, "name").bind(name -> getFieldAsNumber(obj, "age").map(age -> P.p(name, age))).toValidation("'name' or 'age' is missing");
-
-    final String output =
-        parsedJsonV.validation(
-            failmsg -> failmsg,
-            parsedJson -> getNameAndAge.f(parsedJson).validation(failmsg2 -> failmsg2, nameAndAge -> nameAndAge._1()+","+nameAndAge._2()));
-
-    System.out.println(output);
-
-  }
-}
-```
-which also prints
-```
-Ola Nordmann, 28
-
-```
-Can you spot the difference? We have changed the extraction function to return a `tuple2` of string and `BigDecimal` and defer 
-the construction of the string to the latest
-possible moment in our program (often called "the end of the universe"). Now the compiler will tell us if we mistakenly 
-use the wrong conversion. Later we will use
-the compiler even more by using converters.
 
 
 ## Lenses, for when you know little about the JSON structure, or you want to manipulate it directly
-A common super-type `JsonValue` has a very limited set of operations you can perform on it. This is because you do not know exactly what type 
-of value it is. 
-It represents the different kind of values a JSON structure can contain (boolean, number, string, array, object and null) 
-as subtypes of `JsonValue`.
-In Kson we have opted for the visitor pattern to extract the content of a JSON tree. You use a ```JsonValue.Fold``` 
-type to fold a JsonValue into 
-the desired type by calling ```JsonValue.fold(JsonValue.Fold)```.  Most Java based JSON libraries use the unsafe _is***_ 
-idiom in conjunction with a jungle of ifs
-and elses. We felt that folding was the most compact and safe way to de-construct a JSON tree. But we also provided a good deal of utilities 
-to convert JSON into common Java types. (They are a good entry point to examine if you want to know more about how we fold over a `JsonValue`)
-
-The downside with folding the data structure directly is that JSON is a nested structure, and
-we would like to easily get to the deeper nodes without manually having to handle all possibilities
-along the way. That is what _Lenses_ are for! A Lens is an object that knows how to extract a value
+A Lens is an object that knows how to extract a value
 from an object, and to set a value in an object - in a immutable manner. Think of it as a setter
 and getter pair, but not attached to the object it sets and gets from. This gives us the advantage 
 of combining Lenses together as we wish, and create arbitrary combinations and nested goodness
@@ -302,40 +128,59 @@ public class LensExample {
         JsonLenses.select("address").select("zip").asString();
 
 
+    
     JsonValue userjson =
-        jObj(
-            field("name", jString("Ole Normann")),
-            field("address", jObj(
-                field("street", jString("Kongensgate 3")),
-                field("zip", jString("1234")) //Observe the presence of this field
-            ))
-        );
-
-    JsonValue invalidUserJson =
-        jObj(
-            field("name", jString("Kari Normann")),
-            field("address", jObj(
-                field("street", jString("Kongensgate 3"))
-                //Behold the missing zipcode field
-            ))
-        );
-
+            jObj(
+                field("name", "Ole Normann"),
+                field("address", jObj(
+                    field("street", "Kongensgate 3"),
+                    field("zip", "1234") //Observe the presence of this field
+                ))
+            );
     
-    LensResult<String> zipCode = 
-        zipLens.get(userjson);
+        JsonValue invalidUserJson =
+            jObj(
+                field("name", "Kari Normann"),
+                field("address", jObj(
+                    field("street", "Kongensgate 3")
+                    //Behold the missing zipcode field
+                ))
+            );
     
-    System.out.println(zipCode); //The zipLens yields the zipcode as expected
-
-    LensResult<String> noZipCode =
-        zipLens.get(invalidUserJson);
-
-    System.out.println(noZipCode); //The zipLens yields no zipcode, also as expected
+        JsonValue userModel =
+            jObj(
+                field("model",
+                    jObj(
+                        field("users", jArray(userjson, invalidUserJson)),
+                        field("leader", userjson)
+                    )));
+    
+    
+        JsonValueLens modelLens =
+            JsonLenses.field("model");
+    
+        JsonValueLens leaderLens =
+            JsonLenses.field("leader");
+    
+        JsonValueLens usersLens =
+            JsonLenses.field("users");
+    
+        //Replace leader
+        JsonValue updatedLeaderModel =
+            modelLens.then(leaderLens).setF(userModel, invalidUserJson);
+    
+    
+        //Update zipcode of last user in array
+        JsonValue modelWithZips =
+            modelLens.then(usersLens).asArray().modF(updatedLeaderModel, list -> list.map(zipLens.setF("1234")));
+    
+        System.out.println(JsonWriter.writePretty(modelWithZips));
     
   }
 }
 ```
 Not too shabby, considering this is safe. But why bother with lenses? We could just as well write
-` userjson.getField("address").bind(f->f.getFieldAsText("zip")).getOrElse("No zipcode in object)`.
+` userjson.field("address").field("zip").orElse("No zipcode in object)`.
 There are three advantages of using lenses over getters/setters:
  * They are values, you can use them like any other value, pass them as arguments and so forth.
  * They compose, so you can mix them as you like
@@ -354,31 +199,31 @@ public class LensExample {
         JsonLenses.select("address").select("zip").asString();
 
 
-    JsonValue userjson =
-        jObj(
-            field("name", jString("Ole Normann")),
-            field("address", jObj(
-                field("street", jString("Kongensgate 3")),
-                field("zip", jString("1234")) //Observe the presence of this field
-            ))
-        );
-
-    JsonValue invalidUserJson =
-        jObj(
-            field("name", jString("Kari Normann")),
-            field("address", jObj(
-                field("street", jString("Kongensgate 3"))
-                //Behold the missing zipcode field
-            ))
-        );
-
-    JsonValue userModel =
-        jObj(
-            field("model",
-                jObj(
-                    field("users", jArray(userjson, invalidUserJson)),
-                    field("leader", userjson)
-                )));
+   JsonValue userjson =
+               jObj(
+                   field("name", "Ole Normann"),
+                   field("address", jObj(
+                       field("street", "Kongensgate 3"),
+                       field("zip", "1234") //Observe the presence of this field
+                   ))
+               );
+       
+           JsonValue invalidUserJson =
+               jObj(
+                   field("name", "Kari Normann"),
+                   field("address", jObj(
+                       field("street", "Kongensgate 3")
+                       //Behold the missing zipcode field
+                   ))
+               );
+       
+           JsonValue userModel =
+               jObj(
+                   field("model",
+                       jObj(
+                           field("users", jArray(userjson, invalidUserJson)),
+                           field("leader", userjson)
+                       )));
 
 
     JsonValueLens modelLens =
@@ -441,57 +286,95 @@ You say that nothing is simpler than the automatic conversion done by jackson? T
 application is either _stringly typed_ or infected with annotation hell. Or you use stringly typed DTOs to provide
 for the mapping to and from your domain model. Adding a converter for you Money and Measurements librarires is also trivial I presume?
  
-Let's see how simple this can be with Kson. We start by defining our domain model that represents the Lenses use case above.
+Let's see how simple this can be with Kson. We start by looking at decoding from json:
 ```java
-public class CodecExample {
-  public static class Address {
-    final String street;
-    final String zip;
+public class DecodeExample {
 
-    public Address(String street, String zip) {
-      this.street = street;
-      this.zip = zip;
+    final static String jsonString = "{\n" +
+      "  \"model\":{\n" +
+      "    \"leader\":{\n" +
+      "      \"address\":{\n" +
+      "        \"street\":\"abcstreet\",\n" +
+      "        \"zip\":\"1234\"\n" +
+      "      },\n" +
+      "      \"name\":\"Ola Normann\"\n" +
+      "    },\n" +
+      "    \"users\":[\n" +
+      "      {\n" +
+      "        \"address\":{\n" +
+      "          \"street\":\"defstreet\",\n" +
+      "          \"zip\":\"43210\"\n" +
+      "        },\n" +
+      "        \"name\":\"Kari Normann\"\n" +
+      "      },\n" +
+      "      {\n" +
+      "        \"address\":{\n" +
+      "          \"street\":\"ghbstreet\",\n" +
+      "          \"zip\":\"4444\"\n" +
+      "        },\n" +
+      "        \"name\":\"Jens Normann\"\n" +
+      "      }\n" +
+      "    ]\n" +
+      "  }\n" +
+      "}";
+
+    public static class Address {
+        final String street;
+        final String zip;
+
+        public Address(String street, String zip) {
+            this.street = street;
+            this.zip = zip;
+        }
     }
-  }
 
-  static class User {
-    final String                name;
-    final EncodeExample.Address address;
+    static class User {
+        final String                name;
+        final EncodeExample.Address address;
 
-    User(String name, EncodeExample.Address address) {
-      this.name = name;
-      this.address = address;
+        User(String name, EncodeExample.Address address) {
+            this.name = name;
+            this.address = address;
+        }
     }
-  }
 
-  static class UserModel {
-    final EncodeExample.User       leader;
-    final List<EncodeExample.User> users;
+    public static void main(String[] args) {
 
-    UserModel(EncodeExample.User leader, List<EncodeExample.User> users) {
-      this.leader = leader;
-      this.users = users;
+        final JsonDecoder<Address> adressDecoder =
+          obj(
+            field("street", stringDecoder),
+            field("zip", stringDecoder.ensure(z -> z.length() < 5)),
+            Address::new
+          );
+
+
+        JsonResult<JsonValue> json =
+          JsonParser.parse(jsonString);
+
+        Address address =
+          json.field("model").field("leader").field("address").decode(adressDecoder).orThrow(RuntimeException::new);
+
+        System.out.println(address);
+
+        JsonResult<Address> userAddress =
+          json.field("model").field("users").index(0).field("address").decode(adressDecoder);
+
+        System.out.println(userAddress);
     }
-  }
 
-  static class TopLevel {
-    final EncodeExample.UserModel model;
-
-    TopLevel(EncodeExample.UserModel model) {
-      this.model = model;
-    }
-  }
-
-  public static void main(String[] args) {
-
-    
-    
-    
-  }
 }
 ```
+You simply write decoders using the basic buildingBlocks in `JsonDecoders`. The can be nested and mixed as you like. If it compiles it works.
+The pattern is simple, follow the same structure as the json object, and define the fields and types of the fields as arguments to the obj (or array) functions.
+The last argument is the constructor that constructs you domain object. If you want to translate a json value to a domain value, you use the contramap
+method on the `JsonDecoder`. For example if you would like to decode a field into a date you could
+```
+JsonDecoder<LocalDate> localDateDecoder = stringDecoder.contramap(str->LocalDate.parse(str))
+```
+Which you can reuse as you like. Its normal to define all your decoders in one place in your program as a library of decoders for you common datatypes.
 
-
+If you find yourself encoding and decoding to and from you domain objects, you can define codecs instead. They follow the exact same pattern, but you have
+to provide a deconstructor for your domain type. A deconstructor yields all the fields of your objects as a tuple.
 Then we write our codecs using the DSL defined in `JsonCodecs`. We use the _objectCodec_ method in conjunction with the _field_ method to define our
 conversion. It is pretty self explanatory. 
 
