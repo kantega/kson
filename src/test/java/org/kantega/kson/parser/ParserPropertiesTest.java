@@ -63,8 +63,13 @@ public class ParserPropertiesTest {
   }
 
   Gen<JsonValue> lazy(Supplier<Gen<JsonValue>> l) {
-    return Gen.gen(i -> r ->
-        l.get().gen(Math.min(7, i), r));
+    return Gen.gen(i -> r ->{
+       JsonValue v =  l.get().gen(Math.min(7, i), r);
+        while(v == null){
+          v =  l.get().gen(Math.min(7, i), r.reseed(System.currentTimeMillis()));
+        }
+        return v;
+      });
   }
 
   Gen<JsonValue> jsonGen() {

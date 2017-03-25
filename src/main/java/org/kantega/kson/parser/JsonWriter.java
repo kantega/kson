@@ -25,7 +25,7 @@ public class JsonWriter {
 
   private static String writePretty(JsonValue json, int indent) {
     return json
-        .onNull(() -> "")
+        .onNull(() -> "null")
         .onBool(Object::toString)
         .onNumber(BigDecimal::toString)
         .onString(s -> "\"" + s + "\"")

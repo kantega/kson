@@ -56,21 +56,26 @@ public class WriteAndParseJsonExample {
         //Find the zipcode of the first user
         String zip1 =
           json.field("team").field("members").index(0).field("address").fieldAsString("zip", "unknown");
+
+        System.out.println(zip1);
         //Zip 1 is "1234"
 
         //If a field is not present, or a conversion fails, the navigations aborts, and the default value is used.
         String zip2 =
           json.field("team").field("members").index(1).field("address").fieldAsString("zip", "unknown");
+
+        System.out.println(zip2);
         //zip2 is "unknown" since the field is not present.
 
 
         //You can also keep the JsonResult directly
         JsonResult<JsonValue> failedResult =
-          json.field("temas"); //Yields a failed JsonResult
+          json.field("temas").field("name"); //Yields a failed JsonResult
+        System.out.println(failedResult);
 
         JsonResult<JsonValue> teamsResult =
-          json.field("team"); //Yields a failed JsonResult
-
+          json.field("team").field("name"); //Yields "A-team"
+        System.out.println(teamsResult);
 
     }
 }

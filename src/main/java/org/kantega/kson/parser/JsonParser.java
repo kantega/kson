@@ -137,7 +137,7 @@ public class JsonParser {
         if (!readChar(']')) {
             throw expected("',' or ']'");
         }
-        return new JsonArray(list);
+        return new JsonArray(list.reverse());
     }
 
     private JsonObject readObject() throws IOException {

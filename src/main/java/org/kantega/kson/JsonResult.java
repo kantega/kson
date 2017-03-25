@@ -48,7 +48,8 @@ public class JsonResult<A> {
     }
 
     public JsonResult<JsonValue> field(String field) {
-        return onJsonValue(json -> json.getField(field));
+        return onJsonValue(json ->
+          json.getField(field));
     }
 
     public JsonResult<JsonValue> index(int i) {
