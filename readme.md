@@ -74,10 +74,10 @@ public class WriteAndParseJsonExample {
 
         //You can also keep the JsonResult directly
         JsonResult<JsonValue> failedResult =
-          json.field("temas"); //Yields a failed JsonResult
+          json.field("temas"); //Contains a failure
 
         JsonResult<JsonValue> teamsResult =
-          json.field("team"); //Yields a failed JsonResult
+          json.field("team"); //Contains "A-team"
 
 
     }
