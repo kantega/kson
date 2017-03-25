@@ -158,9 +158,9 @@ public class DecodeExample {
 
     static class User {
         final String                name;
-        final EncodeExample.Address address;
+        final Address address;
 
-        User(String name, EncodeExample.Address address) {
+        User(String name, Address address) {
             this.name = name;
             this.address = address;
         }

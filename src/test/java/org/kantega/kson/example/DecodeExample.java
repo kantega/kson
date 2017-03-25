@@ -2,7 +2,6 @@ package org.kantega.kson.example;
 
 import org.kantega.kson.JsonResult;
 import org.kantega.kson.codec.JsonDecoder;
-import org.kantega.kson.codec.JsonDecoders;
 import org.kantega.kson.json.JsonValue;
 import org.kantega.kson.parser.JsonParser;
 
@@ -50,9 +49,9 @@ public class DecodeExample {
 
     static class User {
         final String                name;
-        final EncodeExample.Address address;
+        final Address address;
 
-        User(String name, EncodeExample.Address address) {
+        User(String name, Address address) {
             this.name = name;
             this.address = address;
         }
