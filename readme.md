@@ -108,7 +108,7 @@ The JsonResult type can be used for navigating down and extracting values from t
 
 
 
-##Converting to your domain model using the safest (and simplest actually) way.
+## Converting to your domain model using the safest (and simplest actually) way.
 
 You say that nothing is simpler than the automatic conversion done by jackson? Then I am convinced that your 
 application is either _stringly typed_ or infected with annotation hell. Or you use stringly typed DTOs to provide
