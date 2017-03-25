@@ -39,9 +39,7 @@ public class MicroBenchmark {
 
 
 
-    Instant now = Instant.now();
 
-    System.out.println("Kson start at"+now);
 
     int iters = 10;
     Instant now2 = Instant.now();
@@ -57,6 +55,8 @@ public class MicroBenchmark {
 
     System.out.println("\nSimplejson elapsed :" + (Duration.between(now2, end2).toMillis() / results2.length()));
 
+    Instant now = Instant.now();
+    System.out.println("Kson start at"+now);
     List<JsonResult<org.kantega.kson.json.JsonValue>> results =
         Stream.range(0,iters).map(i -> JsonParser.parse(json)).toList();
 
