@@ -112,7 +112,7 @@ The JsonResult type can be used for navigating down and extracting values from t
 
 You say that nothing is simpler than the automatic conversion done by jackson? Then I am convinced that your 
 application is either _stringly typed_ or infected with annotation hell. Or you use stringly typed DTOs to provide
-for the mapping to and from your domain model. Adding a converter for you Money and Measurements librarires is also trivial I presume?
+for the mapping to and from your domain model. Adding a converter for you Money and Measurements libraries is also trivial I presume?
  
 Let's see how simple this can be with Kson. We start by looking at decoding from json:
 ```java
