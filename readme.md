@@ -515,8 +515,8 @@ The example prints:
 Which is what we could expect: The "leader" field has been replaced and
 the zip code of the users in the list has been updated.
 
-##Behind the scenes
-####or how to build an excellent library by combining many little parts
+## Behind the scenes
+#### or how to build an excellent library by combining many little parts
 Building this library was actually an exercise in teaching functional programming. If it served its purpose
 awaits to be seen.
 
@@ -556,7 +556,7 @@ add that to the equation: some input plus some state is converted to some output
 concern itself with state, we can forget about that all together: We can work completely stateless.
 
 
-###Basics
+### Basics
 To build a codec we need to main parts: something that encodes our model, and something
 that decodes it. So let's start by splitting our problem into two functions: An encoder which converts to JSON, 
 and a decoder which converts from JSON. These two functions can be represented as functional interfaces.
@@ -671,7 +671,7 @@ contained value to an object of the target type.
 That wasn't that hard, plus we learned about fold, and got a feel for how we can can transform an encoder for a type
 into a transformer for optional values of that type.
 
-###Arrays
+### Arrays
 Let's dig deeper  and go for a non-primitive JSON types, for example array:
 We want to transform a `List` with `A` - `List<A>` to a JSON array. It's just as with option, if we can encode
 `A`, we can encode a `List` of `A`.
@@ -686,7 +686,7 @@ Now, in JSON, an array can interchange its the types of its element, meaning you
 In a typed language (like Java), that sort of structure is called an HList (for Heterogenous List). You basically
 have to provide a converter for all the elements which makes it a bit more complicated. Let's save that for later.
 
-###Objects
+### Objects
 The crux of any conversion is of course nested objects. Since JSON is a tree, we only care about directed
 acyclic object-graphs. (If there is a cycle, you will get a stack overflow or an infinite loop)
 
