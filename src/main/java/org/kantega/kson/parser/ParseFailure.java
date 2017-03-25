@@ -1,17 +1,19 @@
 package org.kantega.kson.parser;
 
-import java.util.function.Supplier;
+public class ParseFailure extends RuntimeException {
 
-public class ParseFailure {
 
-  final Supplier<String> message;
+  public final int offset;
+  public final int line;
+  public final int i;
 
-  public ParseFailure(Supplier<String> message) {
-    this.message = message;
+  public ParseFailure(String message, int offset, int line, int i) {
+    super(message);
+    this.offset = offset;
+    this.line = line;
+    this.i = i;
   }
 
 
-  public String getMessage() {
-    return message.get();
-  }
+
 }

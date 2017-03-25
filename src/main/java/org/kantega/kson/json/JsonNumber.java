@@ -8,16 +8,16 @@ import java.math.BigDecimal;
 public class JsonNumber extends JsonValue {
 
   public final static Equal<JsonNumber> eq =
-      Equal.bigdecimalEqual.contramap(num -> num.value);
+      Equal.stringEqual.contramap(num -> num.value);
 
-  public final BigDecimal value;
+  public final String value;
 
-  public JsonNumber(BigDecimal value) {
+  public JsonNumber(String value) {
     this.value = value;
   }
 
   public JsonNumber update(F<BigDecimal,BigDecimal> f){
-    return new JsonNumber(f.f(value));
+    return new JsonNumber(f.f(new BigDecimal(value)).toString());
   }
 
   @Override

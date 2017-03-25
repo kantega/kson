@@ -1,248 +1,413 @@
+
 package org.kantega.kson.parser;
 
-import fj.P;
-import fj.P2;
+import fj.Ord;
 import fj.data.List;
-import fj.data.Stream;
-import fj.data.Validation;
-import fj.parser.Parser;
-import fj.parser.Result;
+import fj.data.TreeMap;
 import org.kantega.kson.JsonResult;
-import org.kantega.kson.json.*;
+import org.kantega.kson.json.JsonArray;
+import org.kantega.kson.json.JsonObject;
+import org.kantega.kson.json.JsonValue;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.math.BigDecimal;
-import java.util.function.Supplier;
 
-import static fj.parser.Parser.CharsParser.character;
-import static fj.parser.Parser.CharsParser.characters;
-import static org.kantega.kson.json.JsonObject.JsonObject;
+import static org.kantega.kson.json.JsonValues.*;
 
+/**
+ * Parser, based on the fast https://github.com/ralfstx/minimal-json
+ */
 public class JsonParser {
 
-    static ParseFailure fail(Supplier<String> msg) {
-        return new ParseFailure(msg);
+    private static final int MIN_BUFFER_SIZE     = 10;
+    private static final int DEFAULT_BUFFER_SIZE = 1024;
+
+    private final Reader        reader;
+    private final char[]        buffer;
+    private       int           bufferOffset;
+    private       int           index;
+    private       int           fill;
+    private       int           line;
+    private       int           lineOffset;
+    private       int           current;
+    private       StringBuilder captureBuffer;
+    private       int           captureStart;
+
+  /*
+   * |                      bufferOffset
+   *                        v
+   * [a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t]        < input
+   *                       [l|m|n|o|p|q|r|s|t|?|?]    < buffer
+   *                          ^               ^
+   *                       |  index           fill
+   */
+
+    private JsonParser(String string) {
+        this(new StringReader(string),
+          Math.max(MIN_BUFFER_SIZE, Math.min(DEFAULT_BUFFER_SIZE, string.length())));
     }
 
-    private static final ParseFailure missingInput =
-      fail(() -> "Missing input");
-
-    // *** Tokens ***
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> space =
-      singleChar(' ');
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> nl =
-      sequence("\\n");
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> tab =
-      on("\\t", "\t");
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> quote =
-      on("\\\"", "\"");
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> formfeed =
-      on("\\fail", "\f");
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> reverseSolidus =
-      on("\\\\", "\\");
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> solidus =
-      on("\\/", "/");
-
-    private static final Parser<Stream<Character>, Character, ParseFailure> hex =
-      Parser.StreamParser.satisfy(missingInput, (i) -> fail(() -> i + " is not a hexadecimal character"), ch -> Character.isDigit(ch) || "abcde".contains(ch.toString().toLowerCase()));
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> control =
-      singleChar('u').bind(u -> hex.bind(h1 -> hex.bind(h2 -> hex.bind(h3 -> hex.map(h4 -> u.append(Stream.arrayStream(h1, h2, h3, h4)))))));
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> special =
-      tab.or(nl).or(quote).or(formfeed).or(reverseSolidus).or(solidus).or(control);
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> whitespaces =
-      space.or(singleChar('\n')).or(singleChar('\t'));
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> comma =
-      singleChar(',');
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> lCurly =
-      singleChar('{');
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> rCurly =
-      singleChar('}');
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> lBracket =
-      singleChar('[');
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> rBracket =
-      singleChar(']');
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> dash =
-      singleChar('-');
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> quot =
-      singleChar('"');
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> point =
-      singleChar('.');
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> colon =
-      singleChar(':');
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> e =
-      singleChar('e').or(singleChar('E')).or(sequence("e+")).or(sequence("e-")).or(sequence("E+")).or(sequence("E-"));
-
-    private static final Parser<Stream<Character>, Character, ParseFailure> digit =
-      Parser.StreamParser.satisfy(missingInput, (i) -> fail(() -> i + " is not a digit"), Character::isDigit);
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> digits =
-      digit.repeat1();
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> exp =
-      and(e, digits);
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> frac =
-      and(point, digits);
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> intt =
-      digits
-        .or(and(dash, digits));
-
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> number =
-      intt
-        .or(and(intt, frac))
-        .or(and(intt, exp))
-        .or(and(intt, frac, exp));
-
-    private final static Validation<ParseFailure, Result<Stream<Character>, Stream<Character>>> failure =
-      Validation.fail(new ParseFailure(() -> "end"));
-
-    private final static Validation<ParseFailure, Result<Stream<Character>, Stream<Character>>> illegalslash =
-      Validation.fail(new ParseFailure(() -> "\" or \\"));
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> charr =
-      Parser.parser(stream -> {
-          if (stream.isEmpty())
-              return
-                failure;
-
-          if (stream.head() == '"' || stream.head() == '\\')
-              return
-                illegalslash;
-
-          StringBuilder mutableBuilder =
-            new StringBuilder();
-
-          Stream<Character> mutableTail =
-            stream;
-
-          while (!mutableTail.isEmpty() && mutableTail.head() != '"' && mutableTail.head() != '\\') {
-              mutableBuilder.append(mutableTail.head());
-              mutableTail = mutableTail.tail()._1();
-          }
-          return Validation.success(Result.result(mutableTail, Stream.fromString(mutableBuilder.toString())));
-      });
-
-
-    private static final Parser<Stream<Character>, Stream<Character>, ParseFailure> chars =
-      flatten(charr.or(special).repeat());
-
-    private static final Parser<Stream<Character>, String, ParseFailure> string =
-      quot.bind(chars, quot, q1 -> cs -> q2 -> Stream.asString(cs));
-
-    // *** Parser ***
-
-    private static final Parser<Stream<Character>, JsonValue, ParseFailure> numberValue =
-      number
-        .map(cs -> new JsonNumber(new BigDecimal(Stream.asString(cs))));
-
-    private static final Parser<Stream<Character>, JsonValue, ParseFailure> stringValue =
-      string.map(JsonString::new);
-
-    private static final Parser<Stream<Character>, JsonValue, ParseFailure> boolValue =
-      string("true").map(s -> (JsonValue) new JsonBool(true)).or(string("false").map(s -> new JsonBool(false)));
-
-    private static final Parser<Stream<Character>, JsonValue, ParseFailure> nullValue =
-      string("null").map(s -> (JsonValue) new JsonNull());
-
-    private static Parser<Stream<Character>, JsonValue, ParseFailure> value() {
-        return lazy(() -> object().or(arrayValue()).or(nullValue).or(boolValue).or(numberValue).or(stringValue));
+    private JsonParser(Reader reader) {
+        this(reader, DEFAULT_BUFFER_SIZE);
     }
 
-    private static Parser<Stream<Character>, JsonValue, ParseFailure> emptyArray() {
-        return and(trim(lBracket), trim(rBracket)).map(s -> (JsonValue) new JsonArray(List.nil()));
+    private JsonParser(Reader reader, int buffersize) {
+        this.reader = reader;
+        buffer = new char[buffersize];
+        line = 1;
+        captureStart = -1;
     }
 
-    private static Parser<Stream<Character>, JsonValue, ParseFailure> nonEmptyArray() {
-        return trim(lBracket).bind(value(), trim(comma).sequence(value()).repeat(), trim(rBracket),
-          lb -> first -> rest -> rb -> new JsonArray(rest.cons(first).toList()));
+    private JsonValue parse() throws IOException {
+        read();
+        skipWhiteSpace();
+        JsonValue result = readValue();
+        skipWhiteSpace();
+        if (!isEndOfText()) {
+            throw error("Unexpected character");
+        }
+        return result;
     }
 
-    private static Parser<Stream<Character>, JsonValue, ParseFailure> arrayValue() {
-        return emptyArray().or(nonEmptyArray());
+    public static JsonResult<JsonValue> parse(String string) {
+        try {
+            return JsonResult.success(new JsonParser(string).parse());
+        } catch (IOException ioe) {
+            return JsonResult.fail("IOException while parsing: " + ioe.getMessage());
+        } catch (ParseFailure f) {
+            return JsonResult.fail("Failed to parse resource: " + f.getMessage() + ": line " + f.line + ", " + f.offset + ", i" + f.i);
+        }
     }
 
-    private static Parser<Stream<Character>, P2<String, JsonValue>, ParseFailure> pair() {
-        return string.bind(trim(colon), value(), str -> c -> val -> P.<String, JsonValue>p(str, val));
+    public static JsonResult<JsonValue> parse(Reader string) {
+        try {
+            return JsonResult.success(new JsonParser(string).parse());
+        } catch (IOException ioe) {
+            return JsonResult.fail("IOException while parsing: " + ioe.getMessage());
+        } catch (ParseFailure f) {
+            return JsonResult.fail("Failed to parse resource: " + f.getMessage() + ": line " + f.line + ", " + f.offset + ", i" + f.i);
+        }
     }
 
-    private static Parser<Stream<Character>, JsonValue, ParseFailure> object() {
-        return
-          trim(lCurly).bind(pair(), trim(comma).sequence(pair()).repeat(), trim(rCurly), lc -> first -> rest -> rc -> JsonObject(rest.cons(first).toList()));
+    private JsonValue readValue() throws IOException {
+        switch (current) {
+            case 'n':
+                return readNull();
+            case 't':
+                return readTrue();
+            case 'f':
+                return readFalse();
+            case '"':
+                return readString();
+            case '[':
+                return readArray();
+            case '{':
+                return readObject();
+            case '-':
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                return readNumber();
+            default:
+                throw expected("value");
+        }
     }
 
-    // *** Helpers ***
-
-    private static Parser<Stream<Character>, Stream<Character>, ParseFailure> singleChar(Character c) {
-        return character(missingInput, (i) -> fail(() -> "'" + i + "' is not a '" + c.toString() + "'"), c).map(Stream::single);
+    private JsonArray readArray() throws IOException {
+        read();
+        skipWhiteSpace();
+        if (readChar(']')) {
+            return new JsonArray(List.nil());
+        }
+        List<JsonValue> list = List.nil();
+        do {
+            skipWhiteSpace();
+            list = list.cons(readValue());
+            skipWhiteSpace();
+        } while (readChar(','));
+        if (!readChar(']')) {
+            throw expected("',' or ']'");
+        }
+        return new JsonArray(list);
     }
 
-    private static Parser<Stream<Character>, Stream<Character>, ParseFailure> sequence(String chars) {
-        return characters(missingInput, (i) -> fail(() -> "'" + i + "' is not a '" + chars + "'"), Stream.fromString(chars));
+    private JsonObject readObject() throws IOException {
+        read();
+        skipWhiteSpace();
+        if (readChar('}')) {
+            return new JsonObject(TreeMap.empty(Ord.stringOrd));
+        }
+        TreeMap<String, JsonValue> contents = TreeMap.empty(Ord.stringOrd);
+        do {
+            skipWhiteSpace();
+            String name = readName();
+            skipWhiteSpace();
+            if (!readChar(':')) {
+                throw expected("':'");
+            }
+            skipWhiteSpace();
+            contents = contents.set(name, readValue());
+            skipWhiteSpace();
+        } while (readChar(','));
+        if (!readChar('}')) {
+            throw expected("',' or '}'");
+        }
+        return new JsonObject(contents);
     }
 
-    private static Parser<Stream<Character>, String, ParseFailure> string(String chars) {
-        return sequence(chars).map(Stream::asString);
+    private String readName() throws IOException {
+        if (current != '"') {
+            throw expected("name");
+        }
+        return readStringInternal();
     }
 
-    @SafeVarargs
-    private static Parser<Stream<Character>, Stream<Character>, ParseFailure> and(
-      Parser<Stream<Character>, Stream<Character>, ParseFailure> one,
-      Parser<Stream<Character>, Stream<Character>, ParseFailure>... rest) {
-        return List.arrayList(rest).foldLeft((o, next) -> o.bind(val1 -> next.map(val1::append)), one);
+    private JsonValue readNull() throws IOException {
+        read();
+        readRequiredChar('u');
+        readRequiredChar('l');
+        readRequiredChar('l');
+        return jNull();
     }
 
-    private static <I, A, E> Parser<I, A, E> lazy(Supplier<Parser<I, A, E>> lazyParser) {
-        return Parser.parser(i -> lazyParser.get().parse(i));
+    private JsonValue readTrue() throws IOException {
+        read();
+        readRequiredChar('r');
+        readRequiredChar('u');
+        readRequiredChar('e');
+        return jBool(true);
     }
 
-    private static Parser<Stream<Character>, Stream<Character>, ParseFailure> on(String check, String output) {
-        return string(check).map(s -> Stream.fromString(output));
+    private JsonValue readFalse() throws IOException {
+        read();
+        readRequiredChar('a');
+        readRequiredChar('l');
+        readRequiredChar('s');
+        readRequiredChar('e');
+        return jBool(false);
     }
 
-    private static Parser<Stream<Character>, Stream<Character>, ParseFailure> flatten(Parser<Stream<Character>, Stream<Stream<Character>>, ParseFailure> input) {
-        return input.map(s -> s.bind(i -> i));
+    private void readRequiredChar(char ch) throws IOException {
+        if (!readChar(ch)) {
+            throw expected("'" + ch + "'");
+        }
     }
 
-    private static Parser<Stream<Character>, Stream<Character>, ParseFailure> trim(Parser<Stream<Character>, Stream<Character>, ParseFailure> parser) {
-        return whitespaces.repeat().bind(parser, whitespaces.repeat(), w1 -> value -> w2 -> value);
+    private JsonValue readString() throws IOException {
+        return jString(readStringInternal());
     }
 
-
-    // *** API ***
-
-    /**
-     * Parses a stream of charcters to a JsonValue
-     *
-     * @param json the stream
-     * @return the Success(JsonValue) or Fail(String)
-     */
-    public static JsonResult<JsonValue> parse(Stream<Character> json) {
-        return JsonResult.fromValidation(value().parse(json).f().map(ParseFailure::getMessage).map(Result::value));
+    private String readStringInternal() throws IOException {
+        read();
+        startCapture();
+        while (current != '"') {
+            if (current == '\\') {
+                pauseCapture();
+                readEscape();
+                startCapture();
+            } else if (current < 0x20) {
+                throw expected("valid string character");
+            } else {
+                read();
+            }
+        }
+        String string = endCapture();
+        read();
+        return string;
     }
 
-    public static JsonResult<JsonValue> parse(String json) {
-        return parse(Stream.fromString(json));
+    private void readEscape() throws IOException {
+        read();
+        switch (current) {
+            case '"':
+            case '/':
+            case '\\':
+                captureBuffer.append((char) current);
+                break;
+            case 'b':
+                captureBuffer.append('\b');
+                break;
+            case 'f':
+                captureBuffer.append('\f');
+                break;
+            case 'n':
+                captureBuffer.append('\n');
+                break;
+            case 'r':
+                captureBuffer.append('\r');
+                break;
+            case 't':
+                captureBuffer.append('\t');
+                break;
+            case 'u':
+                char[] hexChars = new char[4];
+                for (int i = 0; i < 4; i++) {
+                    read();
+                    if (!isHexDigit()) {
+                        throw expected("hexadecimal digit");
+                    }
+                    hexChars[i] = (char) current;
+                }
+                captureBuffer.append((char) Integer.parseInt(new String(hexChars), 16));
+                break;
+            default:
+                throw expected("valid escape sequence");
+        }
+        read();
+    }
+
+    private JsonValue readNumber() throws IOException {
+        startCapture();
+        readChar('-');
+        int firstDigit = current;
+        if (!readDigit()) {
+            throw expected("digit");
+        }
+        if (firstDigit != '0') {
+            while (readDigit()) {
+            }
+        }
+        readFraction();
+        readExponent();
+        return jNum(new BigDecimal(endCapture()));
+    }
+
+    private boolean readFraction() throws IOException {
+        if (!readChar('.')) {
+            return false;
+        }
+        if (!readDigit()) {
+            throw expected("digit");
+        }
+        while (readDigit()) {
+        }
+        return true;
+    }
+
+    private boolean readExponent() throws IOException {
+        if (!readChar('e') && !readChar('E')) {
+            return false;
+        }
+        if (!readChar('+')) {
+            readChar('-');
+        }
+        if (!readDigit()) {
+            throw expected("digit");
+        }
+        while (readDigit()) {
+        }
+        return true;
+    }
+
+    private boolean readChar(char ch) throws IOException {
+        if (current != ch) {
+            return false;
+        }
+        read();
+        return true;
+    }
+
+    private boolean readDigit() throws IOException {
+        if (!isDigit()) {
+            return false;
+        }
+        read();
+        return true;
+    }
+
+    private void skipWhiteSpace() throws IOException {
+        while (isWhiteSpace()) {
+            read();
+        }
+    }
+
+    private void read() throws IOException {
+        if (index == fill) {
+            if (captureStart != -1) {
+                captureBuffer.append(buffer, captureStart, fill - captureStart);
+                captureStart = 0;
+            }
+            bufferOffset += fill;
+            fill = reader.read(buffer, 0, buffer.length);
+            index = 0;
+            if (fill == -1) {
+                current = -1;
+                return;
+            }
+        }
+        if (current == '\n') {
+            line++;
+            lineOffset = bufferOffset + index;
+        }
+        current = buffer[index++];
+    }
+
+    private void startCapture() {
+        if (captureBuffer == null) {
+            captureBuffer = new StringBuilder();
+        }
+        captureStart = index - 1;
+    }
+
+    private void pauseCapture() {
+        int end = current == -1 ? index : index - 1;
+        captureBuffer.append(buffer, captureStart, end - captureStart);
+        captureStart = -1;
+    }
+
+    private String endCapture() {
+        int    end = current == -1 ? index : index - 1;
+        String captured;
+        if (captureBuffer.length() > 0) {
+            captureBuffer.append(buffer, captureStart, end - captureStart);
+            captured = captureBuffer.toString();
+            captureBuffer.setLength(0);
+        } else {
+            captured = new String(buffer, captureStart, end - captureStart);
+        }
+        captureStart = -1;
+        return captured;
+    }
+
+    private ParseFailure expected(String expected) {
+        if (isEndOfText()) {
+            return error("Unexpected end of input");
+        }
+        return error("Expected " + expected);
+    }
+
+    private ParseFailure error(String message) {
+        int absIndex = bufferOffset + index;
+        int column   = absIndex - lineOffset;
+        int offset   = isEndOfText() ? absIndex : absIndex - 1;
+        return new ParseFailure(message, offset, line, column - 1);
+    }
+
+    private boolean isWhiteSpace() {
+        return current == ' ' || current == '\t' || current == '\n' || current == '\r';
+    }
+
+    private boolean isDigit() {
+        return current >= '0' && current <= '9';
+    }
+
+    private boolean isHexDigit() {
+        return current >= '0' && current <= '9'
+          || current >= 'a' && current <= 'f'
+          || current >= 'A' && current <= 'F';
+    }
+
+    private boolean isEndOfText() {
+        return current == -1;
     }
 
 }

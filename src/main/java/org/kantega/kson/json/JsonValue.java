@@ -127,7 +127,7 @@ public abstract class JsonValue {
         }
 
         public Fold<T> onNumber(F<BigDecimal, T> f) {
-            return match(JsonNumber.class, jstr -> f.f(jstr.value));
+            return match(JsonNumber.class, jstr -> f.f(new BigDecimal(jstr.value)));
         }
 
         public Fold<T> onArray(F<List<JsonValue>, T> f) {

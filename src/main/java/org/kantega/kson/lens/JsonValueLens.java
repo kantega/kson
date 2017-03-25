@@ -52,7 +52,7 @@ public class JsonValueLens extends JsonLens<JsonValue, JsonValue> {
     return
         xmap(
             JsonValue::asNumber,
-            n -> success(new JsonNumber(n))
+            n -> success(new JsonNumber(n.toString()))
         );
   }
 

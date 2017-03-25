@@ -67,20 +67,23 @@ public class JsonValues {
     return new JsonString(str);
   }
 
+  final static JsonValue jTrue = jBool(true);
+  final static JsonValue jFalse = jBool(false);
+
   public static JsonValue jBool(boolean val){
-    return new JsonBool(val);
+    return val ? jTrue : jFalse;
   }
 
   public static JsonValue jNum(BigDecimal n){
-    return new JsonNumber(n);
+    return new JsonNumber(n.toString());
   }
 
   public static JsonValue jNum(long n){
-    return new JsonNumber(BigDecimal.valueOf(n));
+    return new JsonNumber(String.valueOf(n));
   }
 
   public static JsonValue jNum(double n){
-    return new JsonNumber(BigDecimal.valueOf(n));
+    return new JsonNumber(String.valueOf(n));
   }
 
 
