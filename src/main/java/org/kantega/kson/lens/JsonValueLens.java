@@ -22,13 +22,6 @@ public class JsonValueLens extends JsonLens<JsonValue, JsonValue> {
     super(get, set);
   }
 
-  /**
-   * Compose two lenses together
-   *
-   * @param other
-   * @param <B>
-   * @return
-   */
   public <B> JsonValueLens then(JsonValueLens other) {
     return new JsonValueLens(
         s -> get(s).bind(other::get),

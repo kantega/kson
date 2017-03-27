@@ -10,11 +10,6 @@ import org.kantega.kson.json.JsonValue;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-/**
- * A thin wrapper around Validation&lparen;String,A>
- *
- * @param <A>
- */
 public class JsonResult<A> {
 
     private final Validation<String, A> validation;
