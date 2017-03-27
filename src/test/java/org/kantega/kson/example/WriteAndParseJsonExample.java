@@ -1,14 +1,11 @@
 package org.kantega.kson.example;
 
-import com.oracle.javafx.jmx.json.JSONReader;
 import org.kantega.kson.JsonResult;
 import org.kantega.kson.json.JsonValue;
 import org.kantega.kson.parser.JsonParser;
 import org.kantega.kson.parser.JsonWriter;
 
-import static org.kantega.kson.json.JsonValues.field;
-import static org.kantega.kson.json.JsonValues.jArray;
-import static org.kantega.kson.json.JsonValues.jObj;
+import static org.kantega.kson.json.JsonValues.*;
 
 public class WriteAndParseJsonExample {
 

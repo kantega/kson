@@ -1,7 +1,5 @@
 package org.kantega.kson.example;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonValue;
 import fj.P;
 import fj.data.List;
 import fj.data.Option;
@@ -37,23 +35,7 @@ public class MicroBenchmark {
 
     String json = Stream.asString(characters);
 
-
-
-
-
     int iters = 10;
-    Instant now2 = Instant.now();
-
-    System.out.println("Start Simplejson at"+now2);
-
-    List<JsonValue> results2 =
-      Stream.range(0,iters).map(i->Json.parse(json)).toList();
-
-    Instant end2 = Instant.now();
-
-    System.out.println("Simplejson end  at"+end2);
-
-    System.out.println("\nSimplejson elapsed :" + (Duration.between(now2, end2).toMillis() / results2.length()));
 
     Instant now = Instant.now();
     System.out.println("Kson start at"+now);
