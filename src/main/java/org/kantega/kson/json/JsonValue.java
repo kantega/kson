@@ -6,6 +6,7 @@ import fj.F0;
 import fj.data.List;
 import fj.data.Option;
 import fj.data.TreeMap;
+import fj.data.Validation;
 import org.kantega.kson.JsonResult;
 
 import java.math.BigDecimal;
@@ -53,7 +54,13 @@ public abstract class JsonValue {
         return onBool(JsonResult::success).orElse(fail("Not a bool"));
     }
 
-    public JsonResult<JsonValue> getField(String field) {
+    public JsonResult.ArrayResult<JsonValue> asArray() {
+        JsonResult<List<JsonValue>> v =
+          onArray(JsonResult::success).orElse(JsonResult.fail("Not an array"));
+        return new JsonResult.ArrayResult<>(v.toValidation());
+    }
+
+    public JsonResult<JsonValue> field(String field) {
         return onObject(
           m -> m.get(field)
             .option(
@@ -66,16 +73,20 @@ public abstract class JsonValue {
         return onObject(map -> Option.some(JsonValues.jObj(map.set(name, value)))).orElse(none());
     }
 
-    public JsonResult<String> getFieldAsText(String field) {
-        return getField(field).bind(JsonValue::asText);
+    public JsonResult.ArrayResult<JsonValue> fieldAsArray(String field) {
+        return field(field).asArray();
     }
 
-    public JsonResult<BigDecimal> getFieldAsNumber(String field) {
-        return getField(field).bind(JsonValue::asNumber);
+    public JsonResult<String> fieldAsText(String field) {
+        return field(field).bind(JsonValue::asText);
+    }
+
+    public JsonResult<BigDecimal> fieldAsNumber(String field) {
+        return field(field).bind(JsonValue::asNumber);
     }
 
     public JsonResult<Boolean> getFieldAsBool(String field) {
-        return getField(field).bind(JsonValue::asBool);
+        return field(field).bind(JsonValue::asBool);
     }
 
     public <T> Fold<T> onString(F<String, T> f) {

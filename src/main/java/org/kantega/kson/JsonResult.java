@@ -8,11 +8,10 @@ import org.kantega.kson.codec.JsonDecoder;
 import org.kantega.kson.json.JsonValue;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 
 public class JsonResult<A> {
 
-    private final Validation<String, A> validation;
+    final Validation<String, A> validation;
 
     private JsonResult(Validation<String, A> validation) {
         this.validation = validation;
@@ -44,19 +43,19 @@ public class JsonResult<A> {
 
     public JsonResult<JsonValue> field(String field) {
         return onJsonValue(json ->
-          json.getField(field));
+          json.field(field));
     }
 
     public JsonResult<JsonValue> index(int i) {
         return asArray().bind(list -> JsonResult.tried(() -> (list.toArray().get(i))));
     }
 
-    public JsonResult<List<JsonValue>> asArray() {
-        return onJsonValue(jsonValue -> jsonValue.onArray(JsonResult::success).orElse(JsonResult.fail("Not an array")));
+    public ArrayResult<JsonValue> asArray() {
+        return new ArrayResult<>(onJsonValue(jsonValue -> jsonValue.onArray(JsonResult::success).orElse(JsonResult.fail("Not an array"))).validation);
     }
 
-    public JsonResult<List<JsonValue>> fieldAsArray(String field) {
-        return field(field).onJsonValue(jsonValue -> jsonValue.onArray(JsonResult::success).orElse(JsonResult.fail("Not an array")));
+    public ArrayResult<JsonValue> fieldAsArray(String field) {
+        return field(field).asArray();
     }
 
     public JsonResult<List<String>> asStrings() {
@@ -210,5 +209,21 @@ public class JsonResult<A> {
         sb.append(validation.validation(f -> f, Object::toString));
         sb.append('}');
         return sb.toString();
+    }
+
+    public static class ArrayResult<A> extends JsonResult<List<A>> {
+
+        public ArrayResult(Validation<String, List<A>> validation) {
+            super(validation);
+        }
+
+        public <B> ArrayResult<B> mapArray(F<A, B> f) {
+            return new ArrayResult<B>(validation.map(list -> list.map(f)));
+        }
+
+        public <B> ArrayResult<B> mapFlattenArray(F<A, JsonResult<B>> f) {
+            return new ArrayResult<B>(validation.bind(list -> JsonResult.sequence(list.map(f)).validation));
+
+        }
     }
 }

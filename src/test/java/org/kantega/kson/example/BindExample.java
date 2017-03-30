@@ -3,9 +3,7 @@ package org.kantega.kson.example;
 import fj.F;
 import fj.P;
 import fj.P2;
-import fj.data.Validation;
 import org.kantega.kson.JsonResult;
-import org.kantega.kson.json.JsonObject;
 import org.kantega.kson.json.JsonValue;
 import org.kantega.kson.parser.JsonParser;
 import org.kantega.kson.parser.JsonWriter;
@@ -35,10 +33,10 @@ public class BindExample {
         //everything becomes a failure
         final F<JsonValue, JsonResult<P2<String, BigDecimal>>> getNameAndAge =
           obj ->
-            obj.getFieldAsText("name")
+            obj.fieldAsText("name")
               .bind(name ->
                 obj
-                  .getFieldAsNumber("age")
+                  .fieldAsNumber("age")
                   .map(age -> P.p(name, age)))
               .fold(f -> JsonResult.fail("'name' or 'age' is missing"), JsonResult::success);
 
