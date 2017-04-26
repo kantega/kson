@@ -4,8 +4,12 @@ import fj.*;
 import fj.data.List;
 import fj.data.Option;
 import fj.data.TreeMap;
+import fj.function.Try1;
+import org.kantega.kson.JsonConversionFailure;
 import org.kantega.kson.JsonResult;
+import org.kantega.kson.json.JsonObject;
 import org.kantega.kson.json.JsonValue;
+import org.kantega.kson.json.JsonValues;
 import org.kantega.kson.util.Products;
 
 import java.math.BigDecimal;
@@ -38,7 +42,7 @@ public class JsonDecoders {
 
     public static <A> JsonDecoder<A> arrayIndexDecoder(int i, JsonDecoder<A> ad) {
         return v ->
-          v.onArray(list -> JsonResult.tried(()->ad.decode(list.toArray().get(i))).bind(x->x)).orElse(fail("Not an array"));
+          v.onArray(list -> JsonResult.tried(() -> ad.decode(list.toArray().get(i))).bind(x -> x)).orElse(fail("Not an array"));
     }
 
     public static <A> JsonDecoder<TreeMap<String, A>> fieldsDecoder(JsonDecoder<A> aDecoder) {
@@ -75,11 +79,11 @@ public class JsonDecoders {
           v.onObject(pair(a, b)::apply).orElse(fail("Not an object"));
     }
 
-    public static <A, B,C> JsonDecoder<C> obj(
+    public static <A, B, C> JsonDecoder<C> obj(
       FieldDecoder<A> a,
       FieldDecoder<B> b,
-      F2<A,B,C> f) {
-        return obj(a,b).map(t->f.f(t._1(),t._2()));
+      F2<A, B, C> f) {
+        return obj(a, b).map(t -> f.f(t._1(), t._2()));
     }
 
     public static <A, B, C> JsonDecoder<P3<A, B, C>> obj(
@@ -92,12 +96,12 @@ public class JsonDecoders {
             .orElse(fail(v + "is not an object"));
     }
 
-    public static <A, B,C,D> JsonDecoder<D> obj(
+    public static <A, B, C, D> JsonDecoder<D> obj(
       FieldDecoder<A> a,
       FieldDecoder<B> b,
       FieldDecoder<C> c,
-      F3<A,B,C,D> f) {
-        return obj(a,b,c).map(t->f.f(t._1(),t._2(),t._3()));
+      F3<A, B, C, D> f) {
+        return obj(a, b, c).map(t -> f.f(t._1(), t._2(), t._3()));
     }
 
     public static <A, B, C, D> JsonDecoder<P4<A, B, C, D>> obj(
@@ -111,13 +115,13 @@ public class JsonDecoders {
             .orElse(fail(v + "is not an object"));
     }
 
-    public static <A, B,C,D, E> JsonDecoder<E> obj(
+    public static <A, B, C, D, E> JsonDecoder<E> obj(
       FieldDecoder<A> a,
       FieldDecoder<B> b,
       FieldDecoder<C> c,
       FieldDecoder<D> d,
-      F4<A,B,C,D,E> f) {
-        return obj(a,b,c,d).map(t->f.f(t._1(),t._2(),t._3(),t._4()));
+      F4<A, B, C, D, E> f) {
+        return obj(a, b, c, d).map(t -> f.f(t._1(), t._2(), t._3(), t._4()));
     }
 
     public static <A, B, C, D, E> JsonDecoder<P5<A, B, C, D, E>> obj(
@@ -132,14 +136,14 @@ public class JsonDecoders {
             .orElse(fail(v + "is not an object"));
     }
 
-    public static <A, B,C,D, E, FF> JsonDecoder<FF> obj(
+    public static <A, B, C, D, E, FF> JsonDecoder<FF> obj(
       FieldDecoder<A> a,
       FieldDecoder<B> b,
       FieldDecoder<C> c,
       FieldDecoder<D> d,
       FieldDecoder<E> e,
-      F5<A,B,C,D,E,FF> f) {
-        return obj(a,b,c,d,e).map(t->f.f(t._1(),t._2(),t._3(),t._4(),t._5()));
+      F5<A, B, C, D, E, FF> f) {
+        return obj(a, b, c, d, e).map(t -> f.f(t._1(), t._2(), t._3(), t._4(), t._5()));
     }
 
     public static <A, B, C, D, E, FF> JsonDecoder<P6<A, B, C, D, E, FF>> obj(
@@ -155,15 +159,15 @@ public class JsonDecoders {
             .orElse(fail(v + "is not an object"));
     }
 
-    public static <A, B,C,D, E, FF,G> JsonDecoder<G> obj(
+    public static <A, B, C, D, E, FF, G> JsonDecoder<G> obj(
       FieldDecoder<A> a,
       FieldDecoder<B> b,
       FieldDecoder<C> c,
       FieldDecoder<D> d,
       FieldDecoder<E> e,
       FieldDecoder<FF> ff,
-      F6<A,B,C,D,E,FF,G> f) {
-        return obj(a,b,c,d,e,ff).map(t->f.f(t._1(),t._2(),t._3(),t._4(),t._5(),t._6()));
+      F6<A, B, C, D, E, FF, G> f) {
+        return obj(a, b, c, d, e, ff).map(t -> f.f(t._1(), t._2(), t._3(), t._4(), t._5(), t._6()));
     }
 
     public static <A, B, C, D, E, FF, G> JsonDecoder<P7<A, B, C, D, E, FF, G>> obj(
@@ -180,7 +184,7 @@ public class JsonDecoders {
             .orElse(fail("Not an object"));
     }
 
-    public static <A, B,C,D, E, FF,G,H> JsonDecoder<H> obj(
+    public static <A, B, C, D, E, FF, G, H> JsonDecoder<H> obj(
       FieldDecoder<A> a,
       FieldDecoder<B> b,
       FieldDecoder<C> c,
@@ -188,8 +192,8 @@ public class JsonDecoders {
       FieldDecoder<E> e,
       FieldDecoder<FF> ff,
       FieldDecoder<G> g,
-      F7<A,B,C,D,E,FF,G,H> f) {
-        return obj(a,b,c,d,e,ff,g).map(t->f.f(t._1(),t._2(),t._3(),t._4(),t._5(),t._6(),t._7()));
+      F7<A, B, C, D, E, FF, G, H> f) {
+        return obj(a, b, c, d, e, ff, g).map(t -> f.f(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7()));
     }
 
     public static <A, B, C, D, E, FF, G, H> JsonDecoder<P8<A, B, C, D, E, FF, G, H>> obj(
@@ -207,7 +211,7 @@ public class JsonDecoders {
             .orElse(fail("Not an object"));
     }
 
-    public static <A, B,C,D, E, FF,G,H,I> JsonDecoder<I> obj(
+    public static <A, B, C, D, E, FF, G, H, I> JsonDecoder<I> obj(
       FieldDecoder<A> a,
       FieldDecoder<B> b,
       FieldDecoder<C> c,
@@ -216,8 +220,20 @@ public class JsonDecoders {
       FieldDecoder<FF> ff,
       FieldDecoder<G> g,
       FieldDecoder<H> h,
-      F8<A,B,C,D,E,FF,G,H,I> f) {
-        return obj(a,b,c,d,e,ff,g,h).map(t->f.f(t._1(),t._2(),t._3(),t._4(),t._5(),t._6(),t._7(),t._8()));
+      F8<A, B, C, D, E, FF, G, H, I> f) {
+        return obj(a, b, c, d, e, ff, g, h).map(t -> f.f(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7(), t._8()));
+    }
+
+    public static <A> JsonDecoder<A> objE(Try1<JsonResult<JsonObject>,A,JsonConversionFailure> f){
+        return value-> {
+            JsonResult<JsonObject> jobj =
+              value.onObject(map->JsonResult.success(new JsonObject(map))).orElse(JsonResult.fail(value +" is not a json object"));
+            try{
+                return JsonResult.success(f.f(jobj));
+            }catch (JsonConversionFailure e){
+                return JsonResult.fail(e.getMessage());
+            }
+        };
     }
 
     interface FieldDecoder<A> {
@@ -226,17 +242,19 @@ public class JsonDecoders {
         default <B> FieldDecoder<B> map(F<A, B> f) {
             return fields -> apply(fields).map(f);
         }
+
+
     }
 
     private static <A, B> FieldDecoder<P2<A, B>> pair(FieldDecoder<A> ad, FieldDecoder<B> bd) {
         return fields -> ad.apply(fields).bind(a -> bd.apply(fields).map(b -> p(a, b)));
     }
 
-    public static <A,B> JsonDecoder<P2<A,B>> and(JsonDecoder<A> aDecoder,JsonDecoder<B> bDecoder){
-        return v -> aDecoder.decode(v).bind(a->bDecoder.decode(v).map(b->p(a,b)));
+    public static <A, B> JsonDecoder<P2<A, B>> and(JsonDecoder<A> aDecoder, JsonDecoder<B> bDecoder) {
+        return v -> aDecoder.decode(v).bind(a -> bDecoder.decode(v).map(b -> p(a, b)));
     }
 
-    public static <A,B,C> JsonDecoder<C> and(JsonDecoder<A> aDecoder,JsonDecoder<B> bDecoder,F2<A,B,C> join){
-        return and(aDecoder,bDecoder).map(t->join.f(t._1(),t._2()));
+    public static <A, B, C> JsonDecoder<C> and(JsonDecoder<A> aDecoder, JsonDecoder<B> bDecoder, F2<A, B, C> join) {
+        return and(aDecoder, bDecoder).map(t -> join.f(t._1(), t._2()));
     }
 }

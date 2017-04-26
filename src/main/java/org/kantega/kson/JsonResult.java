@@ -134,10 +134,31 @@ public class JsonResult<A> {
         return onJsonValue(JsonValue::asBool);
     }
 
+    public String asStringE() {
+        return asString().orThrow(JsonConversionFailure::new);
+    }
+
+    public BigDecimal asNumberE() {
+        return asNumber().orThrow(JsonConversionFailure::new);
+    }
+
+    public Boolean asBooleanE() {
+        return asBoolean().orThrow(JsonConversionFailure::new);
+    }
+
 
     public String asString(String defaultValue) {
-        return onJsonValue(JsonValue::asText).orElse(() -> defaultValue);
+        return asString().orElse(() -> defaultValue);
     }
+
+    public BigDecimal asNumber(BigDecimal defaultNumber){
+        return asNumber().orElse(()->defaultNumber);
+    }
+
+    public Boolean asBoolean(boolean defaultBoolean){
+        return asBoolean().orElse(()->defaultBoolean);
+    }
+
 
     public <A> JsonResult<A> onJsonValue(F<JsonValue, JsonResult<A>> f) {
         return validation.validation(
