@@ -20,11 +20,11 @@ public class JsonEncoders {
     public static final JsonEncoder<BigDecimal> bigDecimalEncoder =
       JsonValues::jNum;
 
-    public static final JsonEncoder<Integer> integerEncoder =
-      bigDecimalEncoder.contramap(BigDecimal::valueOf);
-
     public static final JsonEncoder<Boolean> boolEncoder =
       JsonValues::jBool;
+
+    public static final JsonEncoder<Integer> integerEncoder =
+      bigDecimalEncoder.contramap(BigDecimal::valueOf);
 
     public static <A> JsonEncoder<Option<A>> optionEncoder(JsonEncoder<A> aEncoder) {
         return maybeValue -> maybeValue.option(JsonValues.jNull(), aEncoder::encode);
