@@ -1,6 +1,7 @@
 package org.kantega.kson.json;
 
 import fj.F;
+import fj.data.Option;
 
 public class JsonString extends JsonValue{
 
@@ -8,6 +9,10 @@ public class JsonString extends JsonValue{
 
   public JsonString(String value) {
     this.value = value;
+  }
+
+  public <T> Option<T> onString(F<String, T> f) {
+    return Option.some(f.f(value));
   }
 
   public JsonString update(F<String,String> f){

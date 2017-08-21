@@ -11,88 +11,83 @@ import static org.kantega.kson.codec.JsonEncoders.*;
 public class EncodeExample {
 
 
-  public static class Address {
-    final String street;
-    final String zip;
+    static class Address {
+        final String street;
+        final String zip;
 
-    public Address(String street, String zip) {
-      this.street = street;
-      this.zip = zip;
+        public Address(String street, String zip) {
+            this.street = street;
+            this.zip = zip;
+        }
     }
-  }
 
-  static class User {
-    final String  name;
-    final Address address;
+    static class Name {
+        final String value;
 
-    User(String name, Address address) {
-      this.name = name;
-      this.address = address;
+        Name(String value) {
+            this.value = value;
+        }
     }
-  }
 
-  static class UserModel {
-    final User       leader;
-    final List<User> users;
+    static class User {
+        final Name    name;
+        final Address address;
 
-    UserModel(User leader, List<User> users) {
-      this.leader = leader;
-      this.users = users;
+        User(Name name, Address address) {
+            this.name = name;
+            this.address = address;
+        }
     }
-  }
 
-  static class TopLevel {
-    final UserModel model;
+    static class Department {
+        final User       boss;
+        final List<User> users;
 
-    TopLevel(UserModel model) {
-      this.model = model;
+        Department(User boss, List<User> users) {
+            this.boss = boss;
+            this.users = users;
+        }
     }
-  }
+
+    static final JsonEncoder<Name> nameJsonEncoder =
+      stringEncoder.contramap(name -> name.value);
 
 
-  public static void main(String[] args) {
+    static final JsonEncoder<Address> addressJsonEncoder =
+      obj(
+        field("street", stringEncoder),
+        field("zip", stringEncoder),
+        addr -> p(addr.street, addr.zip)
+      );
 
-    JsonEncoder<Address> addressJsonEncoder =
-        obj(
-            field("street", stringEncoder),
-            field("zip", stringEncoder),
-            addr -> p(addr.street, addr.zip)
-        );
+    static final JsonEncoder<User> userEncoder =
+      obj(
+        field("name", nameJsonEncoder),
+        field("address", addressJsonEncoder),
+        user -> p(user.name, user.address)
+      );
 
-    JsonEncoder<User> userEncoder =
-        obj(
-            field("name", stringEncoder),
-            field("address", addressJsonEncoder),
-            user -> p(user.name, user.address)
-        );
+    static final JsonEncoder<Department> departmentJsonEncoder =
+      obj(
+        field("leader", userEncoder),
+        field("users", arrayEncoder(userEncoder)),
+        um -> p(um.boss, um.users)
+      );
 
-    JsonEncoder<UserModel> userModelJsonEncoder =
-        obj(
-            field("leader", userEncoder),
-            field("users", arrayEncoder(userEncoder)),
-            um -> p(um.leader, um.users)
-        );
-
-    JsonEncoder<TopLevel> topLevelJsonEncoder =
-        obj(
-            field("model", userModelJsonEncoder),
-            tl -> tl.model
-        );
+    public static void main(String[] args) {
 
 
-    TopLevel tl =
-        new TopLevel(
-            new UserModel(
-                new User("Ola Normann", new Address("abcstreet", "1234")),
-                List.list(
-                    new User("Kari Normann", new Address("defstreet", "4321")),
-                    new User("Jens Normann", new Address("ghbstreet", "4444")))
-            )
-        );
+        Department tl =
+          new Department(
+            new User(new Name("Ola Normann"), new Address("abcstreet", "1234")),
+            List.list(
+              new User(new Name("Kari Normann"), new Address("defstreet", "4321")),
+              new User(new Name("Jens Normann"), new Address("ghbstreet", "4444")))
+          );
 
-    JsonValue json =
-        topLevelJsonEncoder.encode(tl);
+        JsonValue json =
+          departmentJsonEncoder.encode(tl);
 
-    System.out.print(JsonWriter.writePretty(json));
-  }
+        System.out.print(JsonWriter.writePretty(json));
+    }
 }

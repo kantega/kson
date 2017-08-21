@@ -51,7 +51,7 @@ public class JsonResult<A> {
     }
 
     public ArrayResult<JsonValue> asArray() {
-        return new ArrayResult<>(onJsonValue(jsonValue -> jsonValue.onArray(JsonResult::success).orElse(JsonResult.fail("Not an array"))).validation);
+        return new ArrayResult<>(onJsonValue(jsonValue -> jsonValue.onArray(JsonResult::success).orSome(JsonResult.fail("Not an array"))).validation);
     }
 
     public ArrayResult<JsonValue> fieldAsArray(String field) {

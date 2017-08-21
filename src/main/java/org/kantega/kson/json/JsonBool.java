@@ -2,7 +2,7 @@ package org.kantega.kson.json;
 
 import fj.Equal;
 import fj.F;
-import fj.data.List;
+import fj.data.Option;
 
 public class JsonBool extends JsonValue {
 
@@ -13,6 +13,10 @@ public class JsonBool extends JsonValue {
 
   public JsonBool(boolean value) {
     this.value = value;
+  }
+
+  public <T> Option<T> onBool(F<Boolean, T> f) {
+    return Option.some(f.f(value));
   }
 
   public JsonBool update(F<Boolean,Boolean> f){

@@ -8,8 +8,6 @@ import fj.data.List;
 import fj.data.Option;
 import fj.data.TreeMap;
 
-import java.math.BigDecimal;
-
 public class JsonObject extends JsonValue {
 
     public static final JsonObject empty =
@@ -30,6 +28,10 @@ public class JsonObject extends JsonValue {
 
     public JsonObject empty() {
         return empty;
+    }
+
+    public <T> Option<T> onObject(F<TreeMap<String, JsonValue>, T> f) {
+        return Option.some(f.f(pairs));
     }
 
     public JsonObject update(F<TreeMap<String, JsonValue>, TreeMap<String, JsonValue>> f) {

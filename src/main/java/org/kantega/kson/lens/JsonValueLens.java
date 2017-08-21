@@ -60,7 +60,7 @@ public class JsonValueLens extends JsonLens<JsonValue, JsonValue> {
   public JsonLens<JsonValue, Option<JsonValue>> asNullable() {
     return
         xmap(
-            a -> a.onNull(() -> success(Option.<JsonValue>none())).orElse(success(some(a))),
+            a -> a.onNull(() -> success(Option.<JsonValue>none())).orSome(success(some(a))),
             n -> n.option(success(JsonValues.jNull()), JsonResult::success)
         );
   }
@@ -68,7 +68,7 @@ public class JsonValueLens extends JsonLens<JsonValue, JsonValue> {
   public JsonLens<JsonValue, JsonObject> asObject() {
     return
         xmap(
-            a -> a.onObject(map -> JsonResult.success(new JsonObject(map))).orElse(fail("Not an object")),
+            a -> a.onObject(map -> JsonResult.success(new JsonObject(map))).orSome(fail("Not an object")),
             JsonResult::success
         );
   }
@@ -76,7 +76,7 @@ public class JsonValueLens extends JsonLens<JsonValue, JsonValue> {
   public JsonLens<JsonValue, List<JsonValue>> asArray() {
     return
         xmap(
-            a -> a.onArray(JsonResult::success).orElse(fail("Not an object")),
+            a -> a.onArray(JsonResult::success).orSome(fail("Not an object")),
             list-> JsonResult.success(JsonValues.jArray(list))
         );
   }

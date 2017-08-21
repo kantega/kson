@@ -6,12 +6,10 @@ import fj.F0;
 import fj.data.List;
 import fj.data.Option;
 import fj.data.TreeMap;
-import fj.data.Validation;
 import org.kantega.kson.JsonResult;
 
 import java.math.BigDecimal;
 
-import static fj.data.List.nil;
 import static fj.data.Option.none;
 import static org.kantega.kson.JsonResult.fail;
 
@@ -19,44 +17,43 @@ public abstract class JsonValue {
 
     public static Equal<JsonValue> eq() {
         return Equal.equal(one -> other ->
-          one
-            .onString(str1 -> other.onString(str1::equals).orElse(false))
-            .onBool(bool1 -> other.onBool(bool1::equals).orElse(false))
-            .onNumber(num1 -> other.onNumber(num1::equals).orElse(false))
-            .onNull(() -> other.onNull(() -> true).orElse(false))
-            .onObject(obj1 -> other.onObject(Equal.treeMapEqual(Equal.stringEqual, eq()).eq(obj1)).orElse(false))
-            .onArray(arr -> other.onArray(Equal.listEqual(eq()).eq(arr)).orElse(false))
-            .orElse(false)
+          one.onString(str1 -> other.onString(str1::equals).orSome(false))
+            .orElse(one.onBool(bool1 -> other.onBool(bool1::equals).orSome(false)))
+            .orElse(one.onNumber(num1 -> other.onNumber(num1::equals).orSome(false)))
+            .orElse(one.onNull(() -> other.onNull(() -> true).orSome(false)))
+            .orElse(one.onObject(obj1 -> other.onObject(Equal.treeMapEqual(Equal.stringEqual, eq()).eq(obj1)).orSome(false)))
+            .orElse(one.onArray(arr -> other.onArray(Equal.listEqual(eq()).eq(arr)).orSome(false)))
+            .orSome(false)
         );
     }
 
     public Option<String> asTextO() {
-        return onString(Option::some).orElse(none());
+        return onString(Option::some).orSome(none());
     }
 
     public JsonResult<String> asText() {
-        return onString(JsonResult::success).orElse(fail("Not a string"));
+        return onString(JsonResult::success).orSome(fail("Not a string"));
     }
 
     public Option<BigDecimal> asNumberO() {
-        return onNumber(Option::some).orElse(none());
+        return onNumber(Option::some).orSome(none());
     }
 
     public JsonResult<BigDecimal> asNumber() {
-        return onNumber(JsonResult::success).orElse(fail("Not a number"));
+        return onNumber(JsonResult::success).orSome(fail("Not a number"));
     }
 
     public Option<Boolean> asBoolO() {
-        return onBool(Option::some).orElse(none());
+        return onBool(Option::some).orSome(none());
     }
 
     public JsonResult<Boolean> asBool() {
-        return onBool(JsonResult::success).orElse(fail("Not a bool"));
+        return onBool(JsonResult::success).orSome(fail("Not a bool"));
     }
 
     public JsonResult.ArrayResult<JsonValue> asArray() {
         JsonResult<List<JsonValue>> v =
-          onArray(JsonResult::success).orElse(JsonResult.fail("Not an array"));
+          onArray(JsonResult::success).orSome(JsonResult.fail("Not an array"));
         return new JsonResult.ArrayResult<>(v.toValidation());
     }
 
@@ -66,11 +63,11 @@ public abstract class JsonValue {
             .option(
               JsonResult.<JsonValue>fail("Field " + field + " not found"),
               JsonResult::success)
-        ).orElse(JsonResult.fail("Trying to field field " + field + ", but this is not abject"));
+        ).orSome(JsonResult.fail("Trying to field field " + field + ", but this is not abject"));
     }
 
     public Option<JsonValue> setField(String name, JsonValue value) {
-        return onObject(map -> Option.some(JsonValues.jObj(map.set(name, value)))).orElse(none());
+        return onObject(map -> Option.some(JsonValues.jObj(map.set(name, value)))).orSome(none());
     }
 
     public JsonResult.ArrayResult<JsonValue> fieldAsArray(String field) {
@@ -89,78 +86,28 @@ public abstract class JsonValue {
         return field(field).bind(JsonValue::asBool);
     }
 
-    public <T> Fold<T> onString(F<String, T> f) {
-        return Fold.<T>newFold(this).onString(f);
+    public <T> Option<T> onString(F<String, T> f) {
+        return none();
     }
 
-    public <T> Fold<T> onNumber(F<BigDecimal, T> f) {
-        return Fold.<T>newFold(this).onNumber(f);
+    public <T> Option<T> onNumber(F<BigDecimal, T> f) {
+        return none();
     }
 
-    public <T> Fold<T> onArray(F<List<JsonValue>, T> f) {
-        return Fold.<T>newFold(this).onArray(f);
+    public <T> Option<T> onArray(F<List<JsonValue>, T> f) {
+        return none();
     }
 
-    public <T> Fold<T> onObject(F<TreeMap<String, JsonValue>, T> f) {
-        return Fold.<T>newFold(this).onObject(f);
+    public <T> Option<T> onObject(F<TreeMap<String, JsonValue>, T> f) {
+        return none();
     }
 
-    public <T> Fold<T> onNull(F0<T> f) {
-        return Fold.<T>newFold(this).onNull(f);
+    public <T> Option<T> onNull(F0<T> f) {
+        return none();
     }
 
-    public <T> Fold<T> onBool(F<Boolean, T> f) {
-        return Fold.<T>newFold(this).onBool(f);
+    public <T> Option<T> onBool(F<Boolean, T> f) {
+        return none();
     }
-
-
-    public static class Fold<T> {
-        final JsonValue                  value;
-        final List<F<Object, Option<T>>> funcs;
-
-        Fold(JsonValue value, List<F<Object, Option<T>>> funcs) {
-            this.value = value;
-            this.funcs = funcs;
-        }
-
-        static <T> Fold<T> newFold(JsonValue value) {
-            return new Fold<>(value, nil());
-        }
-
-        <A extends JsonValue> Fold<T> match(Class<A> c, F<A, T> f) {
-            return new Fold<>(value, funcs.cons(obj -> c.isInstance(obj)
-              ? Option.some(f.f(c.cast(obj)))
-              : Option.none()));
-        }
-
-        public Fold<T> onString(F<String, T> f) {
-            return match(JsonString.class, jstr -> f.f(jstr.value));
-        }
-
-        public Fold<T> onNumber(F<BigDecimal, T> f) {
-            return match(JsonNumber.class, jstr -> f.f(new BigDecimal(jstr.value)));
-        }
-
-        public Fold<T> onArray(F<List<JsonValue>, T> f) {
-            return match(JsonArray.class, jarr -> f.f(jarr.values));
-        }
-
-        public Fold<T> onObject(F<TreeMap<String, JsonValue>, T> f) {
-            return match(JsonObject.class, jobj -> f.f(jobj.pairs));
-        }
-
-        public Fold<T> onNull(F0<T> f) {
-            return match(JsonObject.class, jobj -> f.f());
-        }
-
-        public Fold<T> onBool(F<Boolean, T> f) {
-            return match(JsonBool.class, jbool -> f.f(jbool.value));
-        }
-
-        public T orElse(T defaultValue) {
-            return funcs.foldLeft((maybeT, f) -> maybeT.orElse(f.f(value)), Option.<T>none()).orSome(defaultValue);
-        }
-    }
-
 
 }

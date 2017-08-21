@@ -4,6 +4,7 @@ package org.kantega.kson.json;
 import fj.Equal;
 import fj.F;
 import fj.data.List;
+import fj.data.Option;
 
 public class JsonArray extends JsonValue {
 
@@ -14,6 +15,10 @@ public class JsonArray extends JsonValue {
 
   public JsonArray(List<JsonValue> values) {
     this.values = values;
+  }
+
+  public <T> Option<T> onArray(F<List<JsonValue>, T> f) {
+    return Option.some(f.f(values));
   }
 
   public JsonArray update(F<List<JsonValue>,List<JsonValue>> f){

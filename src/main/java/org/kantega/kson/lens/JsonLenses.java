@@ -13,49 +13,54 @@ import static org.kantega.kson.JsonResult.success;
 
 public class JsonLenses {
 
-  public static JsonValueLens selfLens(){
-    return new JsonValueLens(
-      JsonResult::success,
-      (a, origin) -> JsonResult.success(a)
-    );
-  }
+    public static JsonValueLens selfLens() {
+        return new JsonValueLens(
+          JsonResult::success,
+          (a, origin) -> JsonResult.success(a)
+        );
+    }
 
-  public static JsonValueLens objLens(
+    public static JsonValueLens path(String path) {
+        List<String> parts = List.arrayList(path.split("/"));
+        return parts.foldLeft(JsonValueLens::select, selfLens());
+    }
+
+    public static JsonValueLens objLens(
       F<TreeMap<String, JsonValue>, JsonResult<JsonValue>> get,
       F2<JsonValue, TreeMap<String, JsonValue>, TreeMap<String, JsonValue>> set) {
-    return new JsonValueLens(
-        jVal ->
-            jVal.onObject(get).orElse(fail("Not an object")),
-        (a, origin) ->
-            origin.onObject(map -> success(jObj(set.f(a, map)))).orElse(fail("Not an object"))
-    );
-  }
+        return new JsonValueLens(
+          jVal ->
+            jVal.onObject(get).orSome(fail("Not an object")),
+          (a, origin) ->
+            origin.onObject(map -> success(jObj(set.f(a, map)))).orSome(fail("Not an object"))
+        );
+    }
 
-  public static JsonValueLens arrayLens(
+    public static JsonValueLens arrayLens(
       F<List<JsonValue>, JsonResult<JsonValue>> get,
       F2<JsonValue, List<JsonValue>, List<JsonValue>> set) {
-    return new JsonValueLens(
-        jVal ->
-            jVal.onArray(get).orElse(fail("Not an array")),
-        (a, origin) ->
+        return new JsonValueLens(
+          jVal ->
+            jVal.onArray(get).orSome(fail("Not an array")),
+          (a, origin) ->
             origin
-                .onArray(list -> success(jArray(set.f(a, list))))
-                .orElse(fail("Not an array"))
+              .onArray(list -> success(jArray(set.f(a, list))))
+              .orSome(fail("Not an array"))
 
-    );
-  }
+        );
+    }
 
-  public static JsonValueLens field(String fieldName) {
-    return objLens(
-        map -> map.get(fieldName).option(JsonResult.fail("No field with name " + fieldName + " in object"), JsonResult::success),
-        (a, map) -> map.set(fieldName, a)
-    );
-  }
+    public static JsonValueLens field(String fieldName) {
+        return objLens(
+          map -> map.get(fieldName).option(JsonResult.fail("No field with name " + fieldName + " in object"), JsonResult::success),
+          (a, map) -> map.set(fieldName, a)
+        );
+    }
 
 
-  private static <A> JsonResult<A> fail(String failmsg) {
-    return JsonResult.fail(failmsg);
-  }
+    private static <A> JsonResult<A> fail(String failmsg) {
+        return JsonResult.fail(failmsg);
+    }
 
 
 }

@@ -3,12 +3,9 @@ package org.kantega.kson.json;
 import fj.P;
 import fj.P2;
 import fj.data.List;
-import fj.data.Option;
 import fj.data.TreeMap;
 
 import java.math.BigDecimal;
-
-import static fj.data.Option.*;
 
 public class JsonValues {
 

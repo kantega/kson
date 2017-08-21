@@ -13,123 +13,116 @@ import static org.kantega.kson.codec.JsonCodecs.*;
 
 public class CodecExample {
 
-  //**** Domain model ****
+    //**** Domain model ****
 
-  public static class Address {
-    final String street;
-    final String zip;
+    static class Address {
+        final String street;
+        final String zip;
 
-    public Address(String street, String zip) {
-      this.street = street;
-      this.zip = zip;
+        public Address(String street, String zip) {
+            this.street = street;
+            this.zip = zip;
+        }
     }
-  }
 
-  static class User {
-    final String                name;
-    final EncodeExample.Address address;
+    static class Name {
+        final String value;
 
-    User(String name, EncodeExample.Address address) {
-      this.name = name;
-      this.address = address;
+        Name(String value) {
+            this.value = value;
+        }
     }
-  }
 
-  static class UserModel {
-    final EncodeExample.User       leader;
-    final List<EncodeExample.User> users;
+    static class User {
+        final Name    name;
+        final Address address;
 
-    UserModel(EncodeExample.User leader, List<EncodeExample.User> users) {
-      this.leader = leader;
-      this.users = users;
+        User(Name name, Address address) {
+            this.name = name;
+            this.address = address;
+        }
     }
-  }
 
-  static class TopLevel {
-    final EncodeExample.UserModel model;
+    static class Department {
+        final User       boss;
+        final List<User> users;
 
-    TopLevel(EncodeExample.UserModel model) {
-      this.model = model;
+        Department(User boss, List<User> users) {
+            this.boss = boss;
+            this.users = users;
+        }
     }
-  }
 
 
-  //**** Equal instances for verifying that out roundtrip is correct ****
+    //**** Equal instances for verifying that out roundtrip is correct ****
 
-  final static Equal<EncodeExample.Address> addrEq =
+    final static Equal<Address> addrEq =
       p2Equal(stringEqual, stringEqual).contramap(address -> p(address.street, address.zip));
 
-  final static Equal<EncodeExample.User> userEq =
-      p2Equal(stringEqual, addrEq).contramap(user -> p(user.name, user.address));
+    final static Equal<User> userEq =
+      p2Equal(stringEqual.<Name>contramap(name -> name.value), addrEq).contramap(user -> p(user.name, user.address));
 
-  final static Equal<EncodeExample.UserModel> umEq =
-      p2Equal(userEq, Equal.listEqual(userEq)).contramap(um -> p(um.leader, um.users));
+    final static Equal<Department> departmentEqual =
+      p2Equal(userEq, Equal.listEqual(userEq)).contramap(um -> p(um.boss, um.users));
 
-  final static Equal<EncodeExample.TopLevel> tlEq =
-      umEq.contramap(tl -> tl.model);
 
-  //**** Codecs ****
+    //**** Codecs ****
 
-  final static JsonCodec<EncodeExample.Address> addressCodec =
+    final static JsonCodec<Name> nameCodec =
+      stringCodec.xmap(name -> name.value, Name::new);
+
+    final static JsonCodec<Address> addressCodec =
       objectCodec(
-          field("street", stringCodec),
-          field("zip", stringCodec),
-          addr -> p(addr.street, addr.zip),
-          EncodeExample.Address::new
+        field("street", stringCodec),
+        field("zip", stringCodec),
+        addr -> p(addr.street, addr.zip),
+        Address::new
       );
 
-  final static JsonCodec<EncodeExample.User> userCodec =
+    final static JsonCodec<User> userCodec =
       objectCodec(
-          field("name", stringCodec),
-          field("address", addressCodec),
-          user -> p(user.name, user.address),
-          EncodeExample.User::new
+        field("name", nameCodec),
+        field("address", addressCodec),
+        user -> p(user.name, user.address),
+        User::new
       );
 
-  final static JsonCodec<EncodeExample.UserModel> userModelCodec =
+    final static JsonCodec<Department> departmentJsonCodec =
       objectCodec(
-          field("leader", userCodec),
-          field("users", arrayCodec(userCodec)),
-          um -> p(um.leader, um.users),
-          EncodeExample.UserModel::new
-      );
-
-  final static JsonCodec<EncodeExample.TopLevel> topLevelJsonCodec =
-      objectCodec(
-          field("model", userModelCodec),
-          tl -> tl.model,
-          EncodeExample.TopLevel::new
+        field("boss", userCodec),
+        field("users", arrayCodec(userCodec)),
+        um -> p(um.boss, um.users),
+        Department::new
       );
 
 
-  //**** Running the example ****
+    //**** Running the example ****
 
-  public static void main(String[] args) {
+    public static void main(String[] args) {
 
-    //Create an instance of the domain model
+        //Create an instance of the domain model
 
-    EncodeExample.TopLevel tl =
-        new EncodeExample.TopLevel(
-            new EncodeExample.UserModel(
-                new EncodeExample.User("Ola Normann", new EncodeExample.Address("abcstreet", "1234")),
-                List.list(
-                    new EncodeExample.User("Kari Normann", new EncodeExample.Address("defstreet", "4321")),
-                    new EncodeExample.User("Jens Normann", new EncodeExample.Address("ghbstreet", "4444")))
-            )
-        );
+        Department tl =
+          new Department(
+            new User(new Name("Ola Normann"), new Address("abcstreet", "1234")),
+            List.list(
+              new User(new Name("Kari Normann"), new Address("defstreet", "4321")),
+              new User(new Name("Jens Normann"), new Address("ghbstreet", "4444")))
 
-    //Convert
+          );
 
-    JsonValue json =
-        topLevelJsonCodec.encode(tl);
+        //Convert
 
-    JsonResult<EncodeExample.TopLevel> readResult =
-        topLevelJsonCodec.decode(json);
+        JsonValue json =
+          departmentJsonCodec.encode(tl);
 
-    String output =
-        readResult.fold(err -> "Oh no:" + err, read -> "tl equals readTl  = " + tlEq.eq(tl, read));
+        JsonResult<Department> readResult =
+          departmentJsonCodec.decode(json);
 
-    System.out.print(output);
+        String output =
+          readResult.fold(err -> "Oh no:" + err, read -> "tl equals readTl  = " + departmentEqual.eq(tl, read));
 
-  }
+        System.out.print(output);
+
+    }
 }
