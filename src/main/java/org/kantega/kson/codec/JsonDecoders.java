@@ -250,14 +250,12 @@ public class JsonDecoders {
         };
     }
 
-    interface FieldDecoder<A> {
+    public interface FieldDecoder<A> {
         JsonResult<A> apply(TreeMap<String, JsonValue> fields);
 
         default <B> FieldDecoder<B> map(F<A, B> f) {
             return fields -> apply(fields).map(f);
         }
-
-
     }
 
     private static <A, B> FieldDecoder<P2<A, B>> pair(FieldDecoder<A> ad, FieldDecoder<B> bd) {
