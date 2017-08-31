@@ -1,5 +1,6 @@
 package org.kantega.kson.codec;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import fj.*;
 import fj.data.List;
 import fj.data.Option;
@@ -72,11 +73,18 @@ public class JsonDecoders {
           obj.get(name)
             .option(
               success(Option.<A>none()),
-              v ->
-                valueDecoder
-                  .decode(v)
-                  .map(Option::some)
-                  .mapFail(str -> "Failure while decoding field " + name + ": " + str));
+              v -> {
+                  boolean isNull =
+                    v.onNull(()->true).isSome();
+
+                  return
+                    isNull ?
+                      success(Option.none()) :
+                      valueDecoder
+                        .decode(v)
+                        .map(Option::some)
+                        .mapFail(str -> "Failure while decoding field " + name + ": " + str);
+              });
     }
 
     public static <A> JsonDecoder<A> obj(FieldDecoder<A> ad) {
@@ -236,15 +244,15 @@ public class JsonDecoders {
         return obj(a, b, c, d, e, ff, g, h).map(t -> f.f(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7(), t._8()));
     }
 
-    public static <A> JsonDecoder<A> objE(Try1<JsonResult<JsonObject>,A,JsonConversionFailure> f){
-        return value-> {
+    public static <A> JsonDecoder<A> objE(Try1<JsonResult<JsonObject>, A, JsonConversionFailure> f) {
+        return value -> {
             JsonResult<JsonObject> jobj =
               value
-                .onObject(map->JsonResult.success(new JsonObject(map)))
-                .orSome(JsonResult.fail(value +" is not a json object"));
-            try{
+                .onObject(map -> JsonResult.success(new JsonObject(map)))
+                .orSome(JsonResult.fail(value + " is not a json object"));
+            try {
                 return JsonResult.success(f.f(jobj));
-            }catch (JsonConversionFailure e){
+            } catch (JsonConversionFailure e) {
                 return JsonResult.fail(e.getMessage());
             }
         };
