@@ -16,7 +16,6 @@
     <scm>
         <url>https://github.com/kantega/kson</url>
         <connection>scm:git:git@github.com:kantega/kson.git</connection>
-      <tag>kson-2.3</tag>
   </scm>
 
     <distributionManagement>
