@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 
 import static fj.data.Option.none;
 import static org.kantega.kson.JsonResult.fail;
+import static org.kantega.kson.json.JsonObject.*;
 
 public abstract class JsonValue {
 
@@ -55,6 +56,10 @@ public abstract class JsonValue {
         JsonResult<List<JsonValue>> v =
           onArray(JsonResult::success).orSome(JsonResult.fail("Not an array"));
         return new JsonResult.ArrayResult<>(v.toValidation());
+    }
+
+    public JsonResult<JsonObject> asObject(){
+        return onObject(map->JsonResult.success(JsonObject(map.toList()))).orSome(fail("Not an object"));
     }
 
     public JsonResult<JsonValue> field(String field) {
