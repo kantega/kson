@@ -63,7 +63,7 @@
                 <version>2.5.3</version>
                 <configuration>
                     <remoteTagging>true</remoteTagging>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>git push --delete origin tagName
                 </configuration>
             </plugin>
         </plugins>
