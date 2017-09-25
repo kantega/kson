@@ -4,7 +4,7 @@
 
     <groupId>org.kantega.kson</groupId>
     <artifactId>kson</artifactId>
-    <version>2.7-SNAPSHOT</version>
+    <version>2.7</version>
 
     <licenses>
         <license>
@@ -16,7 +16,7 @@
     <scm>
         <url>https://github.com/kantega/kson</url>
         <connection>scm:git:git@github.com:kantega/kson.git</connection>
-    <tag>HEAD</tag>
+    <tag>kson-2.7</tag>
   </scm>
 
     <distributionManagement>
