@@ -6,6 +6,7 @@ import fj.data.List;
 import fj.data.Option;
 import fj.data.Validation;
 import org.kantega.kson.codec.JsonDecoder;
+import org.kantega.kson.json.JsonObject;
 import org.kantega.kson.json.JsonValue;
 
 import java.math.BigDecimal;
@@ -55,8 +56,16 @@ public class JsonResult<A> {
         return new ArrayResult<>(onJsonValue(jsonValue -> jsonValue.onArray(JsonResult::success).orSome(JsonResult.fail("Not an array"))).validation);
     }
 
+    public JsonResult<JsonObject> asObject(){
+        return onJsonValue(JsonValue::asObject);
+    }
+
     public ArrayResult<JsonValue> fieldAsArray(String field) {
         return field(field).asArray();
+    }
+
+    public JsonResult<JsonObject> fieldAsObject(String field){
+        return field(field).asObject();
     }
 
     public JsonResult<List<String>> asStrings() {
