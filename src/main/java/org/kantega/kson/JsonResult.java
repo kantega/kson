@@ -3,6 +3,7 @@ package org.kantega.kson;
 import fj.F;
 import fj.F0;
 import fj.data.List;
+import fj.data.Option;
 import fj.data.Validation;
 import org.kantega.kson.codec.JsonDecoder;
 import org.kantega.kson.json.JsonValue;
@@ -172,8 +173,20 @@ public class JsonResult<A> {
         );
     }
 
+    /**
+     * Returns a validation that either contains a value or a failmessage.
+     * @return a validation.
+     */
     public Validation<String, A> toValidation() {
         return validation;
+    }
+
+    /**
+     * Returns Some(a) if the JsonResult contains a value, None otherwise.
+     * @return An Option
+     */
+    public Option<A> toOption() {
+        return toValidation().toOption();
     }
 
     public static <A> JsonResult<List<A>> sequence(List<JsonResult<A>> results) {
