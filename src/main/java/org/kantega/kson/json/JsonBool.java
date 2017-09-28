@@ -22,4 +22,12 @@ public class JsonBool extends JsonValue {
   public JsonBool update(F<Boolean,Boolean> f){
     return new JsonBool(f.f(value));
   }
+
+  @Override
+  public String toString() {
+    final StringBuffer sb = new StringBuffer("JsonBool{");
+    sb.append(value);
+    sb.append('}');
+    return sb.toString();
+  }
 }

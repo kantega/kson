@@ -12,4 +12,9 @@ public class JsonNull extends JsonValue {
   public <T> Option<T> onNull(F0<T> f) {
     return Option.some(f.f());
   }
+  @Override
+  public String toString() {
+    final StringBuffer sb = new StringBuffer("JsonNull");
+    return sb.toString();
+  }
 }
