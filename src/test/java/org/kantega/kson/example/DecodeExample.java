@@ -62,7 +62,7 @@ public class DecodeExample {
         final JsonDecoder<Address> adressDecoder =
           obj(
             field("street", stringDecoder),
-            field("zip", stringDecoder.ensure(z -> z.length() < 5)),
+            field("zip", stringDecoder.ensure(z -> z.length() < 5,"The zip must be longer than 5 chars")),
             Address::new
           );
 
