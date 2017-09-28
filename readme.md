@@ -1,4 +1,4 @@
-# KSON &mdash; minimal JSON parsing, writing and converting
+# KSON &mdash; JSON parsing, writing and converting
 
 KSON is a safe and minimal library for parsing text into JSON, writing JSON, and converting JSON to and from your domain types.
 
