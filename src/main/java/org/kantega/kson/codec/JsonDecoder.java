@@ -16,6 +16,10 @@ public interface JsonDecoder<A> extends F<JsonValue, JsonResult<A>> {
         return v -> this.decode(v).map(f);
     }
 
+    default <B> JsonDecoder<B> bind(F<A,JsonDecoder<B>> f){
+        return v->this.decode(v).bind(a->f.f(a).decode(v));
+    }
+
     default JsonDecoder<A> ensure(F<A, Boolean> pred) {
         return ensure(pred, pred.toString());
     }
