@@ -1,6 +1,5 @@
 package org.kantega.kson.codec;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import fj.*;
 import fj.data.List;
 import fj.data.Option;
@@ -10,7 +9,6 @@ import org.kantega.kson.JsonConversionFailure;
 import org.kantega.kson.JsonResult;
 import org.kantega.kson.json.JsonObject;
 import org.kantega.kson.json.JsonValue;
-import org.kantega.kson.json.JsonValues;
 import org.kantega.kson.util.Products;
 
 import java.math.BigDecimal;
@@ -38,12 +36,12 @@ public class JsonDecoders {
 
     public static <A> JsonDecoder<List<A>> arrayDecoder(JsonDecoder<A> ad) {
         return v ->
-          v.onArray(list -> sequence(list.map(ad))).orSome(fail("Not an array"));
+          v.onArray(list -> sequence(list.map(ad))).orSome(fail(v.toString() + " does not represent an array"));
     }
 
     public static <A> JsonDecoder<A> arrayIndexDecoder(int i, JsonDecoder<A> ad) {
         return v ->
-          v.onArray(list -> JsonResult.tried(() -> ad.decode(list.toArray().get(i))).bind(x -> x)).orSome(fail("Not an array"));
+          v.onArray(list -> JsonResult.tried(() -> ad.decode(list.toArray().get(i))).bind(x -> x)).orSome(fail(v.toString() + " does not represent an array"));
     }
 
     public static <A> JsonDecoder<TreeMap<String, A>> fieldsDecoder(JsonDecoder<A> aDecoder) {
@@ -89,14 +87,14 @@ public class JsonDecoders {
 
     public static <A> JsonDecoder<A> obj(FieldDecoder<A> ad) {
         return v ->
-          v.onObject(ad::apply).orSome(fail("Not an object"));
+          v.onObject(ad::apply).orSome(fail(v.toString() + "does not represent an object"));
     }
 
     public static <A, B> JsonDecoder<P2<A, B>> obj(
       FieldDecoder<A> a,
       FieldDecoder<B> b) {
         return v ->
-          v.onObject(pair(a, b)::apply).orSome(fail("Not an object"));
+          v.onObject(pair(a, b)::apply).orSome(fail(v.toString() + "does not represent an object"));
     }
 
     public static <A, B, C> JsonDecoder<C> obj(

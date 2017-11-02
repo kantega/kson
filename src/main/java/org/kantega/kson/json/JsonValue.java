@@ -33,7 +33,7 @@ public abstract class JsonValue {
     }
 
     public JsonResult<String> asText() {
-        return onString(JsonResult::success).orSome(fail("Not a string"));
+        return onString(JsonResult::success).orSome(fail(toString() + " is not a string"));
     }
 
     public Option<BigDecimal> asNumberO() {
@@ -41,7 +41,7 @@ public abstract class JsonValue {
     }
 
     public JsonResult<BigDecimal> asNumber() {
-        return onNumber(JsonResult::success).orSome(fail("Not a number"));
+        return onNumber(JsonResult::success).orSome(fail(toString() + "is not a number"));
     }
 
     public Option<Boolean> asBoolO() {
@@ -49,17 +49,17 @@ public abstract class JsonValue {
     }
 
     public JsonResult<Boolean> asBool() {
-        return onBool(JsonResult::success).orSome(fail("Not a bool"));
+        return onBool(JsonResult::success).orSome(fail(toString() + "is not a bool"));
     }
 
     public JsonResult.ArrayResult<JsonValue> asArray() {
         JsonResult<List<JsonValue>> v =
-          onArray(JsonResult::success).orSome(JsonResult.fail("Not an array"));
+          onArray(JsonResult::success).orSome(JsonResult.fail(toString() + "is not an array"));
         return new JsonResult.ArrayResult<>(v.toValidation());
     }
 
     public JsonResult<JsonObject> asObject(){
-        return onObject(map->JsonResult.success(JsonObject(map.toList()))).orSome(fail("Not an object"));
+        return onObject(map->JsonResult.success(JsonObject(map.toList()))).orSome(fail(toString() + "is not an object"));
     }
 
     public JsonResult<JsonValue> field(String field) {
