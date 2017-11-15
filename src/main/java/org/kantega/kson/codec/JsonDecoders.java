@@ -41,7 +41,9 @@ public class JsonDecoders {
 
     public static <A> JsonDecoder<A> arrayIndexDecoder(int i, JsonDecoder<A> ad) {
         return v ->
-          v.onArray(list -> JsonResult.tried(() -> ad.decode(list.toArray().get(i))).bind(x -> x)).orSome(fail(v.toString() + " does not represent an array"));
+          v
+            .onArray(list -> tried(() -> ad.decode(list.toArray().get(i))).bind(x -> x))
+            .orSome(fail(v.toString() + " does not represent an array"));
     }
 
     public static <A> JsonDecoder<TreeMap<String, A>> fieldsDecoder(JsonDecoder<A> aDecoder) {
@@ -73,28 +75,28 @@ public class JsonDecoders {
               success(Option.<A>none()),
               v -> {
                   boolean isNull =
-                    v.onNull(()->true).isSome();
+                    v.onNull(() -> true).isSome();
 
                   return
                     isNull ?
-                      success(Option.none()) :
-                      valueDecoder
-                        .decode(v)
-                        .map(Option::some)
-                        .mapFail(str -> "Failure while decoding field " + name + ": " + str);
+                    success(Option.none()) :
+                    valueDecoder
+                      .decode(v)
+                      .map(Option::some)
+                      .mapFail(str -> "Failure while decoding field " + name + ": " + str);
               });
     }
 
     public static <A> JsonDecoder<A> obj(FieldDecoder<A> ad) {
         return v ->
-          v.onObject(ad::apply).orSome(fail(v.toString() + "does not represent an object"));
+          v.onObject(ad::apply).orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B> JsonDecoder<P2<A, B>> obj(
       FieldDecoder<A> a,
       FieldDecoder<B> b) {
         return v ->
-          v.onObject(pair(a, b)::apply).orSome(fail(v.toString() + "does not represent an object"));
+          v.onObject(pair(a, b)::apply).orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C> JsonDecoder<C> obj(
@@ -111,7 +113,7 @@ public class JsonDecoders {
         return v ->
           v
             .onObject(obj -> pair(a, pair(b, c)).apply(obj).map(Products::flatten3))
-            .orSome(fail(v + "is not an object"));
+            .orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C, D> JsonDecoder<D> obj(
@@ -130,7 +132,7 @@ public class JsonDecoders {
         return v ->
           v
             .onObject(obj -> pair(a, pair(b, pair(c, d))).apply(obj).map(Products::flatten4))
-            .orSome(fail(v + "is not an object"));
+            .orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C, D, E> JsonDecoder<E> obj(
@@ -151,7 +153,7 @@ public class JsonDecoders {
         return v ->
           v
             .onObject(obj -> pair(a, pair(b, pair(c, pair(d, e)))).apply(obj).map(Products::flatten5))
-            .orSome(fail(v + "is not an object"));
+            .orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C, D, E, FF> JsonDecoder<FF> obj(
@@ -174,7 +176,7 @@ public class JsonDecoders {
         return v ->
           v
             .onObject(obj -> pair(a, pair(b, pair(c, pair(d, pair(e, f))))).apply(obj).map(Products::flatten6))
-            .orSome(fail(v + "is not an object"));
+            .orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C, D, E, FF, G> JsonDecoder<G> obj(
@@ -199,7 +201,7 @@ public class JsonDecoders {
         return v ->
           v
             .onObject(obj -> pair(a, pair(b, pair(c, pair(d, pair(e, pair(f, g)))))).apply(obj).map(Products::flatten7))
-            .orSome(fail("Not an object"));
+            .orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C, D, E, FF, G, H> JsonDecoder<H> obj(
@@ -226,7 +228,7 @@ public class JsonDecoders {
         return v ->
           v
             .onObject(obj -> pair(a, pair(b, pair(c, pair(d, pair(e, pair(f, pair(g, h))))))).apply(obj).map(Products::flatten8))
-            .orSome(fail("Not an object"));
+            .orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C, D, E, FF, G, H, I> JsonDecoder<I> obj(
@@ -246,12 +248,12 @@ public class JsonDecoders {
         return value -> {
             JsonResult<JsonObject> jobj =
               value
-                .onObject(map -> JsonResult.success(new JsonObject(map)))
-                .orSome(JsonResult.fail(value + " is not a json object"));
+                .onObject(map -> success(new JsonObject(map)))
+                .orSome(fail(value + " is not a json object"));
             try {
-                return JsonResult.success(f.f(jobj));
+                return success(f.f(jobj));
             } catch (JsonConversionFailure e) {
-                return JsonResult.fail(e.getMessage());
+                return fail(e.getMessage());
             }
         };
     }
@@ -274,5 +276,9 @@ public class JsonDecoders {
 
     public static <A, B, C> JsonDecoder<C> and(JsonDecoder<A> aDecoder, JsonDecoder<B> bDecoder, F2<A, B, C> join) {
         return and(aDecoder, bDecoder).map(t -> join.f(t._1(), t._2()));
+    }
+
+    private static <A> JsonResult<A> notAnObjectFailMsg(JsonValue v) {
+        return fail("Tried to decode an object but i got a" + v.toString() + ". Did you use the right decoder?");
     }
 }

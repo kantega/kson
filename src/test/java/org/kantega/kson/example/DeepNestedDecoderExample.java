@@ -3,9 +3,7 @@ package org.kantega.kson.example;
 import fj.data.List;
 import org.kantega.kson.JsonResult;
 import org.kantega.kson.codec.JsonDecoder;
-import org.kantega.kson.json.JsonValue;
 import org.kantega.kson.parser.JsonParser;
-
 
 import static org.kantega.kson.codec.JsonDecoders.*;
 
