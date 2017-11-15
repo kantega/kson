@@ -9,13 +9,18 @@ import org.kantega.kson.codec.JsonEncoders;
 import org.kantega.kson.parser.JsonParser;
 import org.kantega.kson.parser.JsonWriter;
 import org.kantega.kson.skinny.SkinnyDecoders;
+import org.kantega.kson.skinny.SkinnyDemux;
 import org.kantega.kson.skinny.SkinnyEncoders;
+import org.kantega.kson.skinny.SkinnyMux;
 
 import static fj.P.p;
 import static org.kantega.kson.codec.JsonDecoders.*;
 import static org.kantega.kson.codec.JsonEncoders.*;
 
 public class SkinnyExample {
+
+    interface Msg {
+    }
 
     static class UserId {
         final String value;
@@ -32,7 +37,7 @@ public class SkinnyExample {
         }
     }
 
-    static class AddUser {
+    static class AddUser implements Msg {
 
         final UserId userId;
         final String name;
@@ -66,7 +71,7 @@ public class SkinnyExample {
         }
     }
 
-    static class AddItem {
+    static class AddItem implements Msg {
 
         final ItemId itemId;
         final UserId userId;
@@ -117,5 +122,32 @@ public class SkinnyExample {
         System.out.println(addItemDecoded);
 
 
+        // *** Demuxing ***
+
+        SkinnyDemux<Msg> skinnyDemux =
+          SkinnyDemux.demuxer(
+            P.p("addUser", addUserDec),
+            P.p("addItem", addItemDec));
+
+        JsonEncoder<AddUser> addUserMsgMux =
+          SkinnyMux.mux("addUser", addUserEnc);
+
+        JsonEncoder<AddItem> addItemMsgMux =
+          SkinnyMux.mux("addItem", addItemEnc);
+
+        String addUserAsMuxedString =
+          JsonWriter.write(addUserMsgMux.encode(addUserMsg));
+
+        String addItemAsMuxedString =
+          JsonWriter.write(addItemMsgMux.encode(addItemMsg));
+
+        JsonResult<Msg> addUserDemuxed =
+          JsonParser.parse(addUserAsMuxedString).decode(skinnyDemux);
+
+        JsonResult<Msg> addItemDemuxed =
+          JsonParser.parse(addItemAsMuxedString).decode(skinnyDemux);
+
+        System.out.println(addUserDemuxed);
+        System.out.println(addItemDemuxed);
     }
 }
