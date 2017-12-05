@@ -5,6 +5,7 @@ import fj.P2;
 import fj.data.*;
 import org.kantega.kson.JsonResult;
 import org.kantega.kson.codec.JsonDecoder;
+import org.kantega.kson.codec.JsonEncoder;
 import org.kantega.kson.json.JsonValue;
 
 
@@ -24,13 +25,15 @@ public class SkinnyDemux<A> implements JsonDecoder<A> {
         this.decoders = decoders;
     }
 
-    @SafeVarargs
-    public static <A> SkinnyDemux<A> demuxer(P2<String, JsonDecoder<? extends A>>... messageDecoders) {
+    public static <A> SkinnyDemux<A> demuxer() {
         TreeMap<String, JsonDecoder<A>> decoders =
-          List.arrayList(messageDecoders).foldLeft((map, pair) -> map.set(pair._1(), (JsonDecoder<A>) pair._2()), TreeMap.empty(Ord.stringOrd));
+          TreeMap.empty(Ord.stringOrd);
         return new SkinnyDemux<>(decoders);
     }
 
+    public SkinnyDemux<A> add(String name, JsonDecoder<? extends A> decoder) {
+        return new SkinnyDemux<>(decoders.set(name, (JsonDecoder<A>) decoder));
+    }
 
     public JsonResult<A> decode(JsonValue value) {
         return

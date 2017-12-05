@@ -94,7 +94,7 @@ public class SkinnyExample {
       SkinnyEncoders.skinnyEncoder(stringEncoder, stringEncoder, addUser -> p(addUser.userId.value, addUser.name));
 
     static JsonEncoder<AddItem> addItemEnc =
-      SkinnyEncoders.skinnyEncoder(stringEncoder, stringEncoder, addItem -> p(addItem.userId.value, addItem.userId.value));
+      SkinnyEncoders.skinnyEncoder(stringEncoder, stringEncoder, addItem -> p(addItem.itemId.value, addItem.userId.value));
 
     static JsonDecoder<AddUser> addUserDec =
       SkinnyDecoders.skinny(stringDecoder, stringDecoder, (uid, name) -> new AddUser(new UserId(uid), name));
@@ -124,22 +124,24 @@ public class SkinnyExample {
 
         // *** Demuxing ***
 
-        SkinnyDemux<Msg> skinnyDemux =
-          SkinnyDemux.demuxer(
-            P.p("addUser", addUserDec),
-            P.p("addItem", addItemDec));
+        JsonDecoder<Msg> skinnyDemux =
+          SkinnyDemux.<Msg>demuxer()
+            .add("addUser", addUserDec)
+            .add("addItem", addItemDec);
 
-        JsonEncoder<AddUser> addUserMsgMux =
-          SkinnyMux.mux("addUser", addUserEnc);
-
-        JsonEncoder<AddItem> addItemMsgMux =
-          SkinnyMux.mux("addItem", addItemEnc);
+        JsonEncoder<Object> skinnyMux =
+          SkinnyMux.muxer()
+            .add(AddUser.class, "addUser", addUserEnc)
+            .add(AddItem.class, "addItem", addItemEnc);
 
         String addUserAsMuxedString =
-          JsonWriter.write(addUserMsgMux.encode(addUserMsg));
+          JsonWriter.write(skinnyMux.encode(addUserMsg));
 
         String addItemAsMuxedString =
-          JsonWriter.write(addItemMsgMux.encode(addItemMsg));
+          JsonWriter.write(skinnyMux.encode(addItemMsg));
+
+        System.out.println(addUserAsMuxedString);
+        System.out.println(addItemAsMuxedString);
 
         JsonResult<Msg> addUserDemuxed =
           JsonParser.parse(addUserAsMuxedString).decode(skinnyDemux);
