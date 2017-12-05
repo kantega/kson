@@ -1,11 +1,10 @@
 package org.kantega.kson.skinny;
 
 import fj.Ord;
-import fj.P2;
-import fj.data.*;
+import fj.data.Option;
+import fj.data.TreeMap;
 import org.kantega.kson.JsonResult;
 import org.kantega.kson.codec.JsonDecoder;
-import org.kantega.kson.codec.JsonEncoder;
 import org.kantega.kson.json.JsonValue;
 
 
