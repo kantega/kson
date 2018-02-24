@@ -32,7 +32,7 @@ public class JsonWriter {
           .onNull(() -> "null")
           .orElse(json.onBool(Object::toString))
           .orElse(json.onNumber(BigDecimal::toString))
-          .orElse(json.onString(s -> "\"" + s + "\""))
+          .orElse(json.onString(s -> "\"" + writeJsonString(s) + "\""))
           .orElse(json.onArray(arr -> arr.isEmpty() ? "[]" : "[" + arr.tail().foldLeft((sum, val) -> sum + "," + write(val), write(arr.head())) + "]"))
           .orElse(json.onObject(obj -> mkString(obj.toList().map(pairs -> "\"" + pairs._1() + "\":" + write(pairs._2())), "{", ",", "}")))
           .orSome("");
