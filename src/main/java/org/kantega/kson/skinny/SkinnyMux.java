@@ -9,6 +9,11 @@ import org.kantega.kson.json.JsonValues;
 import static fj.P.p;
 import static org.kantega.kson.json.JsonValues.jObj;
 
+/**
+ * A skinny muxer knows how to encode simple domain messages that are subclasses of A. You can use this to serialize a
+ * message protocol using json.
+ * @param <A>
+ */
 public class SkinnyMux<A> implements JsonEncoder<A> {
 
     private final F<A, Option<JsonValue>> encoders;
