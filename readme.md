@@ -1,5 +1,7 @@
 # KSON &mdash; JSON parsing, writing and converting
 
+TL;DR https://github.com/kantega/kson/tree/master/src/test/java/org/kantega/kson/example
+
 KSON is a safe and minimal library for parsing text into JSON, writing JSON, and converting JSON to and from your domain types.
 
 By safe we mean no side effects (exceptions, mutations), typesafe everywhere and compile time errors where possible. 
