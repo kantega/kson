@@ -12,6 +12,9 @@ import static org.kantega.kson.codec.JsonDecoders.*;
 import static org.kantega.kson.codec.JsonEncoders.*;
 import static org.kantega.kson.codec.JsonEncoders.bigDecimalEncoder;
 
+/**
+ *
+ */
 public class JsonCodecs {
 
     public static JsonCodec<String> stringCodec =
