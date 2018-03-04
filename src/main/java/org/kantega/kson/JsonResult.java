@@ -5,6 +5,7 @@ import fj.F0;
 import fj.data.List;
 import fj.data.Option;
 import fj.data.Validation;
+import javafx.scene.chart.ValueAxis;
 import org.kantega.kson.codec.JsonDecoder;
 import org.kantega.kson.json.JsonObject;
 import org.kantega.kson.json.JsonValue;
@@ -140,6 +141,10 @@ public class JsonResult<A> {
         return onJsonValue(JsonValue::asNumber);
     }
 
+    public JsonResult<Long> asLong() {
+        return onJsonValue(JsonValue::asLong);
+    }
+
     public JsonResult<Boolean> asBoolean() {
         return onJsonValue(JsonValue::asBool);
     }
@@ -205,7 +210,11 @@ public class JsonResult<A> {
     }
 
     public <B> JsonResult<B> mod(F<Validation<String, A>, Validation<String, B>> f) {
-        return new JsonResult<>(f.f(validation));
+        try {
+            return new JsonResult<>(f.f(validation));
+        }catch (Exception e){
+            return new JsonResult<>(Validation.fail("Failed to transform "+toString()+": "+e.getClass().getSimpleName()+"-"+e.getMessage()));
+        }
     }
 
     public <T> T fold(F<String, T> onError, F<A, T> onSuccess) {

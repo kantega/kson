@@ -3,6 +3,7 @@ package org.kantega.kson.json;
 import fj.Equal;
 import fj.F;
 import fj.F0;
+import fj.Try;
 import fj.data.List;
 import fj.data.Option;
 import fj.data.TreeMap;
@@ -44,8 +45,16 @@ public abstract class JsonValue {
         return onNumber(JsonResult::success).orSome(fail(toString() + "is not a number"));
     }
 
+    public JsonResult<Long> asLong() {
+        return onNumber(JsonResult::success).map(n->n.asLong()).orSome(fail(toString() + "is not a long"));
+    }
+
+    public Option<Long> asLongO() {
+        return asLong().toOption();
+    }
+
     public Option<Boolean> asBoolO() {
-        return onBool(Option::some).orSome(none());
+        return asBool().toOption();
     }
 
     public JsonResult<Boolean> asBool() {
@@ -87,7 +96,11 @@ public abstract class JsonValue {
         return field(field).bind(JsonValue::asNumber);
     }
 
-    public JsonResult<Boolean> getFieldAsBool(String field) {
+    public JsonResult<Long> fieldAsLong(String field){
+        return fieldAsNumber(field).map(n->n.longValue());
+    }
+
+    public JsonResult<Boolean> fieldAsBool(String field) {
         return field(field).bind(JsonValue::asBool);
     }
 
