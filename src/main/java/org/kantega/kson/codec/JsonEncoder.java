@@ -9,7 +9,7 @@ import org.kantega.kson.json.JsonValue;
  * value to the value de encoder knows how to encode:
  *
  * i.e. To encode a userId as a string: JsonDecoders.stringDecoder.contramap(userId -&rarr userId.stringValue)
- * @param <A>
+ * @param <A> The type of the values this encoder encodes
  */
 public interface JsonEncoder<A> extends F<A, JsonValue> {
 
