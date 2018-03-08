@@ -10,7 +10,7 @@ import org.kantega.kson.json.JsonValue;
  * is error-prone.
  * One need a mechanism to capture possible outcomes of the conversion.
  *
- * @param <A>
+ * @param <A> The type of the value the decoder creates
  */
 public interface JsonDecoder<A> extends F<JsonValue, JsonResult<A>> {
 
@@ -69,9 +69,9 @@ public interface JsonDecoder<A> extends F<JsonValue, JsonResult<A>> {
     /**
      * As ensure(pred), but with a simple message.
      *
-     * @param pred
-     * @param msg
-     * @return
+     * @param pred The predicate that must hold
+     * @param msg Message to output if fail
+     * @return A new decoder that fails if the predicate does not hold
      */
     default JsonDecoder<A> ensure(F<A, Boolean> pred, String msg) {
         return ensure(pred,decoded -> "The value " + decoded + " did not satisfy the constraint " + msg);
@@ -80,9 +80,9 @@ public interface JsonDecoder<A> extends F<JsonValue, JsonResult<A>> {
     /**
      * As ensure(pred), but you can supply the error message yourself
      *
-     * @param pred
-     * @param msg
-     * @return
+     * @param pred The predicate that must yield true
+     * @param msg The message to outputif the predicate does not hold
+     * @return A new decoder that fails if the predicate does not hold.
      */
     default JsonDecoder<A> ensure(F<A, Boolean> pred, F<A, String> msg) {
         return v ->
