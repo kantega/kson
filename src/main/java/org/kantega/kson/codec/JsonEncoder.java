@@ -8,7 +8,7 @@ import org.kantega.kson.json.JsonValue;
  * to your domain model by using contramap(). You supply a lambda that adapts your domain
  * value to the value de encoder knows how to encode:
  *
- * i.e. To encode a userId as a string: JsonDecoders.stringDecoder.contramap(userId -&rarr userId.stringValue)
+ * i.e. To encode a userId as a string: JsonDecoders.stringDecoder.contramap(userId -&rarr; userId.stringValue)
  * @param <A> The type of the values this encoder encodes
  */
 public interface JsonEncoder<A> extends F<A, JsonValue> {
