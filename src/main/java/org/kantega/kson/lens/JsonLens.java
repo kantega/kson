@@ -62,7 +62,7 @@ public class JsonLens<S, A> {
    * @param f The transformation from the original valye type to target value type
    * @param g The transformation from the target value type to the original/underlying type
    * @param <B> The new type of value you want to map to and from.
-   * @return
+   * @return a new lens
    */
   public <B> JsonLens<S, B> xmap(F<A, JsonResult<B>> f, F<B, JsonResult<A>> g) {
     return new JsonLens<>(

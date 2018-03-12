@@ -54,9 +54,9 @@ public class JsonEncoders {
     /**
      * Encodes a fj.data.List into a json array
      *
-     * @param aEncoder
-     * @param <A>
-     * @return
+     * @param aEncoder the encoder for the elements in the list
+     * @param <A> the type of the elements
+     * @return an encoder that encodes lists
      */
     public static <A> JsonEncoder<List<A>> arrayEncoder(JsonEncoder<A> aEncoder) {
         return list -> JsonValues.jArray(list.map(aEncoder::encode));
@@ -101,11 +101,11 @@ public class JsonEncoders {
      * En encoder that encodes domain values into a json object. You supply a field encoder that encodes a field, and
      * a lambda that converts your domain value into the type of the field converter.
      *
-     * @param fe
-     * @param f
-     * @param <A>
-     * @param <X>
-     * @return
+     * @param fe the encoder for the field
+     * @param f unwraps the object
+     * @param <A> the type of the field
+     * @param <X> the type of the object
+     * @return an encoder that encodes an object as a json obejct
      */
     public static <A, X> JsonEncoder<X> obj(FieldEncoder<A> fe, F<X, A> f) {
         return obj(fe).contramap(f);
@@ -114,11 +114,11 @@ public class JsonEncoders {
     /**
      * An encoder that encodes a tuple of domain values into a json object. You supply encoders for each field.
      *
-     * @param a
-     * @param b
-     * @param <A>
-     * @param <B>
-     * @return
+     * @param a   The encoder that knows how to encode the first field value
+     * @param b   The encoder that knows how to encode the second field value
+     * @param <A> The type of the first field value
+     * @param <B> The type of the second field value
+     * @return an encoder that encodes tuples as a json object
      */
     public static <A, B> JsonEncoder<P2<A, B>> obj(
         FieldEncoder<A> a,
