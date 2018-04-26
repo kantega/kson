@@ -5,7 +5,6 @@ import fj.F0;
 import fj.data.List;
 import fj.data.Option;
 import fj.data.Validation;
-import javafx.scene.chart.ValueAxis;
 import org.kantega.kson.codec.JsonDecoder;
 import org.kantega.kson.json.JsonObject;
 import org.kantega.kson.json.JsonValue;
