@@ -264,6 +264,10 @@ public class JsonDecoders {
         default <B> FieldDecoder<B> map(F<A, B> f) {
             return fields -> apply(fields).map(f);
         }
+
+        default FieldDecoder<A> or(FieldDecoder<A> other){
+            return fields -> apply(fields).orResult(()->other.apply(fields));
+        }
     }
 
     private static <A, B> FieldDecoder<P2<A, B>> pair(FieldDecoder<A> ad, FieldDecoder<B> bd) {
