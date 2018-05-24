@@ -48,6 +48,10 @@ public class JsonResult<A> {
           json.field(field));
     }
 
+    public boolean containsField(String field){
+        return onJsonValue(jsonValue -> JsonResult.success(jsonValue.onObject(fields -> fields.contains(field)).orSome(false))).orElse(()->false);
+    }
+
     public JsonResult<JsonValue> index(int i) {
         return asArray().bind(list -> JsonResult.tried(() -> (list.toArray().get(i))));
     }
