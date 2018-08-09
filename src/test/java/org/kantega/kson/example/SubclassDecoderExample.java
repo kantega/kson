@@ -1,5 +1,6 @@
 package org.kantega.kson.example;
 
+import fj.P;
 import fj.data.List;
 import org.kantega.kson.JsonResult;
 import org.kantega.kson.codec.JsonDecoder;
@@ -21,7 +22,7 @@ public class SubclassDecoderExample {
             .map(B::new);
 
     static final JsonDecoder<Common> commonDecoder =
-        new SubclassDecoder();
+        subclassObjDecoder("type", P.p("a",aDecoder),P.p("b",bDecoder));
 
     static final JsonDecoder<List<Common>> commonListDecoder =
         arrayDecoder(commonDecoder);
@@ -44,22 +45,6 @@ public class SubclassDecoderExample {
         System.out.println(faillist);
     }
 
-
-    static class SubclassDecoder implements JsonDecoder<Common> {
-
-
-        @Override
-        public JsonResult<Common> decode(JsonValue v) {
-            return v.fieldAsText("type").bind(type -> {
-                if (type.equals("a"))
-                    return aDecoder.decode(v);
-                else if (type.equals("b"))
-                    return bDecoder.decode(v);
-                else
-                    return JsonResult.fail("Unknown type");
-            });
-        }
-    }
 
     interface Common {
     }

@@ -19,243 +19,258 @@ import static org.kantega.kson.JsonResult.*;
 public class JsonDecoders {
 
     public static final JsonDecoder<String> stringDecoder =
-      JsonValue::asText;
+        JsonValue::asText;
 
     public static final JsonDecoder<BigDecimal> bigDecimalDecoder =
-      JsonValue::asNumber;
+        JsonValue::asNumber;
 
     public static final JsonDecoder<Boolean> boolDecoder =
-      JsonValue::asBool;
+        JsonValue::asBool;
 
     public static <A> JsonDecoder<Option<A>> optionDecoder(JsonDecoder<A> da) {
         return v ->
-          v
-            .onNull(() -> success(Option.<A>none()))
-            .orSome(da.decode(v).map(Option::some));
+            v
+                .onNull(() -> success(Option.<A>none()))
+                .orSome(da.decode(v).map(Option::some));
     }
 
     public static <A> JsonDecoder<List<A>> arrayDecoder(JsonDecoder<A> ad) {
         return v ->
-          v.onArray(list -> sequence(list.map(ad))).orSome(fail(v.toString() + " does not represent an array"));
+            v.onArray(list -> sequence(list.map(ad))).orSome(fail(v.toString() + " does not represent an array"));
     }
 
     public static <A> JsonDecoder<A> arrayIndexDecoder(int i, JsonDecoder<A> ad) {
         return v ->
-          v
-            .onArray(list -> tried(() -> ad.decode(list.toArray().get(i))).bind(x -> x))
-            .orSome(fail(v.toString() + " does not represent an array"));
+            v
+                .onArray(list -> tried(() -> ad.decode(list.toArray().get(i))).bind(x -> x))
+                .orSome(fail(v.toString() + " does not represent an array"));
     }
 
     public static <A> JsonDecoder<TreeMap<String, A>> fieldsDecoder(JsonDecoder<A> aDecoder) {
         return v ->
-          v.onObject(props ->
-            sequence(
-              props
-                .toList()
-                .map(p2 -> aDecoder.decode(p2._2()).map(a -> P.p(p2._1(), a)))
-            ).map(list -> TreeMap.iterableTreeMap(Ord.stringOrd, list)))
-            .orSome(fail(v + "is not an object"));
+            v.onObject(props ->
+                sequence(
+                    props
+                        .toList()
+                        .map(p2 -> aDecoder.decode(p2._2()).map(a -> P.p(p2._1(), a)))
+                ).map(list -> TreeMap.iterableTreeMap(Ord.stringOrd, list)))
+                .orSome(fail(v + "is not an object"));
     }
 
     public static <A> FieldDecoder<A> field(String name, JsonDecoder<A> valueDecoder) {
         return obj ->
-          obj.get(name)
-            .option(
-              fail("No field with name " + name),
-              v ->
-                valueDecoder
-                  .decode(v)
-                  .mapFail(str -> "Failure while decoding field " + name + ": " + str));
+            obj.get(name)
+                .option(
+                    fail("No field with name " + name),
+                    v ->
+                        valueDecoder
+                            .decode(v)
+                            .mapFail(str -> "Failure while decoding field " + name + ": " + str));
     }
 
     public static <A> FieldDecoder<Option<A>> optionalField(String name, JsonDecoder<A> valueDecoder) {
         return obj ->
-          obj.get(name)
-            .option(
-              success(Option.<A>none()),
-              v -> {
-                  boolean isNull =
-                    v.onNull(() -> true).isSome();
+            obj.get(name)
+                .option(
+                    success(Option.<A>none()),
+                    v -> {
+                        boolean isNull =
+                            v.onNull(() -> true).isSome();
 
-                  return
-                    isNull ?
-                    success(Option.none()) :
-                    valueDecoder
-                      .decode(v)
-                      .map(Option::some)
-                      .mapFail(str -> "Failure while decoding field " + name + ": " + str);
-              });
+                        return
+                            isNull ?
+                            success(Option.none()) :
+                            valueDecoder
+                                .decode(v)
+                                .map(Option::some)
+                                .mapFail(str -> "Failure while decoding field " + name + ": " + str);
+                    });
     }
 
     public static <A> JsonDecoder<A> obj(FieldDecoder<A> ad) {
         return v ->
-          v.onObject(ad::apply).orSome(notAnObjectFailMsg(v));
+            v.onObject(ad::apply).orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B> JsonDecoder<P2<A, B>> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b) {
         return v ->
-          v.onObject(pair(a, b)::apply).orSome(notAnObjectFailMsg(v));
+            v.onObject(pair(a, b)::apply).orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C> JsonDecoder<C> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      F2<A, B, C> f) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        F2<A, B, C> f) {
         return obj(a, b).map(t -> f.f(t._1(), t._2()));
     }
 
     public static <A, B, C> JsonDecoder<P3<A, B, C>> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      FieldDecoder<C> c) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        FieldDecoder<C> c) {
         return v ->
-          v
-            .onObject(obj -> pair(a, pair(b, c)).apply(obj).map(Products::flatten3))
-            .orSome(notAnObjectFailMsg(v));
+            v
+                .onObject(obj -> pair(a, pair(b, c)).apply(obj).map(Products::flatten3))
+                .orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C, D> JsonDecoder<D> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      FieldDecoder<C> c,
-      F3<A, B, C, D> f) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        FieldDecoder<C> c,
+        F3<A, B, C, D> f) {
         return obj(a, b, c).map(t -> f.f(t._1(), t._2(), t._3()));
     }
 
     public static <A, B, C, D> JsonDecoder<P4<A, B, C, D>> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      FieldDecoder<C> c,
-      FieldDecoder<D> d) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        FieldDecoder<C> c,
+        FieldDecoder<D> d) {
         return v ->
-          v
-            .onObject(obj -> pair(a, pair(b, pair(c, d))).apply(obj).map(Products::flatten4))
-            .orSome(notAnObjectFailMsg(v));
+            v
+                .onObject(obj -> pair(a, pair(b, pair(c, d))).apply(obj).map(Products::flatten4))
+                .orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C, D, E> JsonDecoder<E> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      FieldDecoder<C> c,
-      FieldDecoder<D> d,
-      F4<A, B, C, D, E> f) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        FieldDecoder<C> c,
+        FieldDecoder<D> d,
+        F4<A, B, C, D, E> f) {
         return obj(a, b, c, d).map(t -> f.f(t._1(), t._2(), t._3(), t._4()));
     }
 
     public static <A, B, C, D, E> JsonDecoder<P5<A, B, C, D, E>> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      FieldDecoder<C> c,
-      FieldDecoder<D> d,
-      FieldDecoder<E> e) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        FieldDecoder<C> c,
+        FieldDecoder<D> d,
+        FieldDecoder<E> e) {
         return v ->
-          v
-            .onObject(obj -> pair(a, pair(b, pair(c, pair(d, e)))).apply(obj).map(Products::flatten5))
-            .orSome(notAnObjectFailMsg(v));
+            v
+                .onObject(obj -> pair(a, pair(b, pair(c, pair(d, e)))).apply(obj).map(Products::flatten5))
+                .orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C, D, E, FF> JsonDecoder<FF> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      FieldDecoder<C> c,
-      FieldDecoder<D> d,
-      FieldDecoder<E> e,
-      F5<A, B, C, D, E, FF> f) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        FieldDecoder<C> c,
+        FieldDecoder<D> d,
+        FieldDecoder<E> e,
+        F5<A, B, C, D, E, FF> f) {
         return obj(a, b, c, d, e).map(t -> f.f(t._1(), t._2(), t._3(), t._4(), t._5()));
     }
 
     public static <A, B, C, D, E, FF> JsonDecoder<P6<A, B, C, D, E, FF>> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      FieldDecoder<C> c,
-      FieldDecoder<D> d,
-      FieldDecoder<E> e,
-      FieldDecoder<FF> f) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        FieldDecoder<C> c,
+        FieldDecoder<D> d,
+        FieldDecoder<E> e,
+        FieldDecoder<FF> f) {
         return v ->
-          v
-            .onObject(obj -> pair(a, pair(b, pair(c, pair(d, pair(e, f))))).apply(obj).map(Products::flatten6))
-            .orSome(notAnObjectFailMsg(v));
+            v
+                .onObject(obj -> pair(a, pair(b, pair(c, pair(d, pair(e, f))))).apply(obj).map(Products::flatten6))
+                .orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C, D, E, FF, G> JsonDecoder<G> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      FieldDecoder<C> c,
-      FieldDecoder<D> d,
-      FieldDecoder<E> e,
-      FieldDecoder<FF> ff,
-      F6<A, B, C, D, E, FF, G> f) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        FieldDecoder<C> c,
+        FieldDecoder<D> d,
+        FieldDecoder<E> e,
+        FieldDecoder<FF> ff,
+        F6<A, B, C, D, E, FF, G> f) {
         return obj(a, b, c, d, e, ff).map(t -> f.f(t._1(), t._2(), t._3(), t._4(), t._5(), t._6()));
     }
 
     public static <A, B, C, D, E, FF, G> JsonDecoder<P7<A, B, C, D, E, FF, G>> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      FieldDecoder<C> c,
-      FieldDecoder<D> d,
-      FieldDecoder<E> e,
-      FieldDecoder<FF> f,
-      FieldDecoder<G> g) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        FieldDecoder<C> c,
+        FieldDecoder<D> d,
+        FieldDecoder<E> e,
+        FieldDecoder<FF> f,
+        FieldDecoder<G> g) {
         return v ->
-          v
-            .onObject(obj -> pair(a, pair(b, pair(c, pair(d, pair(e, pair(f, g)))))).apply(obj).map(Products::flatten7))
-            .orSome(notAnObjectFailMsg(v));
+            v
+                .onObject(obj -> pair(a, pair(b, pair(c, pair(d, pair(e, pair(f, g)))))).apply(obj).map(Products::flatten7))
+                .orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C, D, E, FF, G, H> JsonDecoder<H> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      FieldDecoder<C> c,
-      FieldDecoder<D> d,
-      FieldDecoder<E> e,
-      FieldDecoder<FF> ff,
-      FieldDecoder<G> g,
-      F7<A, B, C, D, E, FF, G, H> f) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        FieldDecoder<C> c,
+        FieldDecoder<D> d,
+        FieldDecoder<E> e,
+        FieldDecoder<FF> ff,
+        FieldDecoder<G> g,
+        F7<A, B, C, D, E, FF, G, H> f) {
         return obj(a, b, c, d, e, ff, g).map(t -> f.f(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7()));
     }
 
     public static <A, B, C, D, E, FF, G, H> JsonDecoder<P8<A, B, C, D, E, FF, G, H>> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      FieldDecoder<C> c,
-      FieldDecoder<D> d,
-      FieldDecoder<E> e,
-      FieldDecoder<FF> f,
-      FieldDecoder<G> g,
-      FieldDecoder<H> h) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        FieldDecoder<C> c,
+        FieldDecoder<D> d,
+        FieldDecoder<E> e,
+        FieldDecoder<FF> f,
+        FieldDecoder<G> g,
+        FieldDecoder<H> h) {
         return v ->
-          v
-            .onObject(obj -> pair(a, pair(b, pair(c, pair(d, pair(e, pair(f, pair(g, h))))))).apply(obj).map(Products::flatten8))
-            .orSome(notAnObjectFailMsg(v));
+            v
+                .onObject(obj -> pair(a, pair(b, pair(c, pair(d, pair(e, pair(f, pair(g, h))))))).apply(obj).map(Products::flatten8))
+                .orSome(notAnObjectFailMsg(v));
     }
 
     public static <A, B, C, D, E, FF, G, H, I> JsonDecoder<I> obj(
-      FieldDecoder<A> a,
-      FieldDecoder<B> b,
-      FieldDecoder<C> c,
-      FieldDecoder<D> d,
-      FieldDecoder<E> e,
-      FieldDecoder<FF> ff,
-      FieldDecoder<G> g,
-      FieldDecoder<H> h,
-      F8<A, B, C, D, E, FF, G, H, I> f) {
+        FieldDecoder<A> a,
+        FieldDecoder<B> b,
+        FieldDecoder<C> c,
+        FieldDecoder<D> d,
+        FieldDecoder<E> e,
+        FieldDecoder<FF> ff,
+        FieldDecoder<G> g,
+        FieldDecoder<H> h,
+        F8<A, B, C, D, E, FF, G, H, I> f) {
         return obj(a, b, c, d, e, ff, g, h).map(t -> f.f(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7(), t._8()));
     }
 
     public static <A> JsonDecoder<A> objE(Try1<JsonResult<JsonObject>, A, JsonConversionFailure> f) {
         return value -> {
             JsonResult<JsonObject> jobj =
-              value
-                .onObject(map -> success(new JsonObject(map)))
-                .orSome(fail(value + " is not a json object"));
+                value
+                    .onObject(map -> success(new JsonObject(map)))
+                    .orSome(fail(value + " is not a json object"));
             try {
                 return success(f.f(jobj));
             } catch (JsonConversionFailure e) {
                 return fail(e.getMessage());
             }
         };
+    }
+
+    public static <A> JsonDecoder<A> subclassObjDecoder(
+        String selectorFieldName,
+        P2<String, JsonDecoder<A>>... decoders) {
+        List<P2<String, JsonDecoder<A>>> decoderList = List.arrayList(decoders);
+        return v ->
+            v.fieldAsText(selectorFieldName).bind(type ->
+                decoderList
+                    .find(pair -> pair._1().equals(type))
+                    .option(
+                        fail("No decoder was registererd for type " + type),
+                        found -> found._2().decode(v)
+                    )
+            );
     }
 
     public interface FieldDecoder<A> {
@@ -265,8 +280,8 @@ public class JsonDecoders {
             return fields -> apply(fields).map(f);
         }
 
-        default FieldDecoder<A> or(FieldDecoder<A> other){
-            return fields -> apply(fields).orResult(()->other.apply(fields));
+        default FieldDecoder<A> or(FieldDecoder<A> other) {
+            return fields -> apply(fields).orResult(() -> other.apply(fields));
         }
     }
 
