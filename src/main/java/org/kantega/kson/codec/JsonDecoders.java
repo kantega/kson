@@ -24,6 +24,9 @@ public class JsonDecoders {
     public static final JsonDecoder<BigDecimal> bigDecimalDecoder =
         JsonValue::asNumber;
 
+    public static final JsonDecoder<Integer> intDecoder =
+        bigDecimalDecoder.map(BigDecimal::intValue);
+
     public static final JsonDecoder<Boolean> boolDecoder =
         JsonValue::asBool;
 
